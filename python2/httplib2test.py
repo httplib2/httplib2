@@ -511,25 +511,6 @@ class HttpTest(unittest.TestCase):
         self.assertEqual(200, response.status)
         self.assertNotEqual(None, response.previous)
 
-    def testSslCertValidation(self):
-        if sys.version_info >= (2, 6):
-            # Test that we get an ssl.SSLError when specifying a non-existent CA
-            # certs file.
-            http = httplib2.Http(ca_certs='/nosuchfile')
-            self.assertRaises(ssl.SSLError,
-                    http.request, "https://www.google.com/", "GET")
-
-            # Test that we get a SSLHandshakeError if we try to access
-            # https;//www.google.com, using a CA cert file that doesn't contain
-            # the CA Gogole uses (i.e., simulating a cert that's not signed by a
-            # trusted CA).
-            other_ca_certs = os.path.join(
-                    os.path.dirname(os.path.abspath(httplib2.__file__ )),
-                    "test", "other_cacerts.txt")
-            http = httplib2.Http(ca_certs=other_ca_certs)
-            self.assertRaises(httplib2.SSLHandshakeError,
-                    http.request, "https://www.google.com/", "GET")
-
     def testSslCertValidationDoubleDots(self):
         pass
         # No longer a valid test.

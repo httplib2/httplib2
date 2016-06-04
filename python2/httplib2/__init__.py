@@ -20,9 +20,10 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
                     "Jonathan Feinberg",
                     "Blair Zajac",
                     "Sam Ruby",
-                    "Louis Nyffenegger"]
+                    "Louis Nyffenegger",
+                    "Alex Yu"]
 __license__ = "MIT"
-__version__ = "0.9.2"
+__version__ = "0.9.3"
 
 import re
 import sys
@@ -68,16 +69,16 @@ try:
     import ssl # python 2.6
     ssl_SSLError = ssl.SSLError
     def _ssl_wrap_socket(sock, key_file, cert_file,
-                         disable_validation, ca_certs):
+                         disable_validation, ca_certs, ssl_version):
         if disable_validation:
             cert_reqs = ssl.CERT_NONE
         else:
             cert_reqs = ssl.CERT_REQUIRED
-        # We should be specifying SSL version 3 or TLS v1, but the ssl module
-        # doesn't expose the necessary knobs. So we need to go with the default
-        # of SSLv23.
+        if ssl_version is None:
+            ssl_version = ssl.PROTOCOL_SSLv23
         return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
-                               cert_reqs=cert_reqs, ca_certs=ca_certs)
+                               cert_reqs=cert_reqs, ca_certs=ca_certs,
+                               ssl_version=ssl_version)
 except (AttributeError, ImportError):
     ssl_SSLError = None
     def _ssl_wrap_socket(sock, key_file, cert_file,
@@ -938,7 +939,8 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
     """
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  strict=None, timeout=None, proxy_info=None,
-                 ca_certs=None, disable_ssl_certificate_validation=False):
+                 ca_certs=None, disable_ssl_certificate_validation=False,
+                 ssl_version=None):
         httplib.HTTPSConnection.__init__(self, host, port=port,
                                          key_file=key_file,
                                          cert_file=cert_file, strict=strict)
@@ -949,6 +951,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
         self.ca_certs = ca_certs
         self.disable_ssl_certificate_validation = \
                 disable_ssl_certificate_validation
+        self.ssl_version = ssl_version
 
     # The following two methods were adapted from https_wrapper.py, released
     # with the Google Appengine SDK at
@@ -1033,7 +1036,8 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                 sock.connect((self.host, self.port))
                 self.sock =_ssl_wrap_socket(
                     sock, self.key_file, self.cert_file,
-                    self.disable_ssl_certificate_validation, self.ca_certs)
+                    self.disable_ssl_certificate_validation, self.ca_certs,
+                    self.ssl_version)
                 if self.debuglevel > 0:
                     print "connect: (%s, %s)" % (self.host, self.port)
                     if use_proxy:
@@ -1155,7 +1159,8 @@ class Http(object):
     """
     def __init__(self, cache=None, timeout=None,
                  proxy_info=proxy_info_from_environment,
-                 ca_certs=None, disable_ssl_certificate_validation=False):
+                 ca_certs=None, disable_ssl_certificate_validation=False,
+                 ssl_version=None):
         """If 'cache' is a string then it is used as a directory name for
         a disk cache. Otherwise it must be an object that supports the
         same interface as FileCache.
@@ -1178,11 +1183,14 @@ class Http(object):
 
         If disable_ssl_certificate_validation is true, SSL cert validation will
         not be performed.
+
+        By default, ssl.PROTOCOL_SSLv23 will be used for the ssl version.
         """
         self.proxy_info = proxy_info
         self.ca_certs = ca_certs
         self.disable_ssl_certificate_validation = \
                 disable_ssl_certificate_validation
+        self.ssl_version = ssl_version
 
         # Map domain name to an httplib connection
         self.connections = {}
@@ -1478,14 +1486,16 @@ class Http(object):
                                 proxy_info=proxy_info,
                                 ca_certs=self.ca_certs,
                                 disable_ssl_certificate_validation=
-                                        self.disable_ssl_certificate_validation)
+                                        self.disable_ssl_certificate_validation,
+                                        ssl_version=self.ssl_version)
                     else:
                         conn = self.connections[conn_key] = connection_type(
                                 authority, timeout=self.timeout,
                                 proxy_info=proxy_info,
                                 ca_certs=self.ca_certs,
                                 disable_ssl_certificate_validation=
-                                        self.disable_ssl_certificate_validation)
+                                        self.disable_ssl_certificate_validation,
+                                ssl_version=self.ssl_version)
                 else:
                     conn = self.connections[conn_key] = connection_type(
                             authority, timeout=self.timeout,
