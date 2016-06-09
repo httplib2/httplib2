@@ -1099,7 +1099,7 @@ try:
                         allow_truncated=False, follow_redirects=True,
                         deadline=None):
             if deadline is None:
-                deadline = socket.getdefaulttimeout() or 5
+                deadline = socket.getdefaulttimeout()
             return fetch(url, payload=payload, method=method, headers=headers,
                          allow_truncated=allow_truncated,
                          follow_redirects=follow_redirects, deadline=deadline,
