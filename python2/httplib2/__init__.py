@@ -1131,11 +1131,10 @@ class AppEngineHttpsConnection(httplib.HTTPSConnection):
         self._fetch = _new_fixed_fetch(
                 not disable_ssl_certificate_validation)
 
-
 # Use a different connection object for Google App Engine
 try:
     server_software = os.environ.get('SERVER_SOFTWARE')
-    if server_software:
+    if not server_software:
         raise NotRunningAppEngineEnvironment()
     elif not (server_software.startswith('Google App Engine/') or
               server_software.startswith('Development/')):
