@@ -80,6 +80,7 @@ try:
         if hasattr(ssl, 'SSLContext'): # Python 2.7.9
             context = ssl.SSLContext(ssl_version)
             context.verify_mode = cert_reqs
+            context.check_hostname = (cert_reqs != ssl.CERT_NONE)
             if cert_file:
                 context.load_cert_chain(cert_file, key_file)
             if ca_certs:
