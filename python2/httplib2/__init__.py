@@ -68,21 +68,31 @@ except ImportError:
 try:
     import ssl # python 2.6
     ssl_SSLError = ssl.SSLError
-    def _ssl_wrap_socket(sock, key_file, cert_file,
-                         disable_validation, ca_certs, ssl_version):
+    def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
+                         ca_certs, ssl_version, hostname):
         if disable_validation:
             cert_reqs = ssl.CERT_NONE
         else:
             cert_reqs = ssl.CERT_REQUIRED
         if ssl_version is None:
             ssl_version = ssl.PROTOCOL_SSLv23
-        return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
-                               cert_reqs=cert_reqs, ca_certs=ca_certs,
-                               ssl_version=ssl_version)
+
+        if hasattr(ssl, 'SSLContext'): # Python 2.7.9
+            context = ssl.SSLContext(ssl_version)
+            context.verify_mode = cert_reqs
+            if cert_file:
+                context.load_cert_chain(cert_file, key_file)
+            if ca_certs:
+                context.load_verify_locations(ca_certs)
+            return context.wrap_socket(sock, server_hostname=hostname)
+        else:
+            return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
+                                   cert_reqs=cert_reqs, ca_certs=ca_certs,
+                                   ssl_version=ssl_version)
 except (AttributeError, ImportError):
     ssl_SSLError = None
-    def _ssl_wrap_socket(sock, key_file, cert_file,
-                         disable_validation, ca_certs):
+    def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
+                         ca_certs, ssl_version, hostname):
         if not disable_validation:
             raise CertificateValidationUnsupported(
                     "SSL certificate validation is not supported without "
@@ -1039,7 +1049,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                 self.sock =_ssl_wrap_socket(
                     sock, self.key_file, self.cert_file,
                     self.disable_ssl_certificate_validation, self.ca_certs,
-                    self.ssl_version)
+                    self.ssl_version, self.host)
                 if self.debuglevel > 0:
                     print "connect: (%s, %s)" % (self.host, self.port)
                     if use_proxy:
