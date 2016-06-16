@@ -163,6 +163,8 @@ class CertificateHostnameMismatch(SSLHandshakeError):
         self.host = host
         self.cert = cert
 
+class NotRunningAppEngineEnvironment(HttpLib2Error): pass
+
 # Open Items:
 # -----------
 # Proxy support
@@ -1083,8 +1085,62 @@ SCHEME_TO_CONNECTION = {
     'https': HTTPSConnectionWithTimeout
 }
 
+
+def _new_fixed_fetch(validate_certificate):
+    def fixed_fetch(url, payload=None, method="GET", headers={},
+                    allow_truncated=False, follow_redirects=True,
+                    deadline=None):
+        if deadline is None:
+            deadline = socket.getdefaulttimeout()
+        return fetch(url, payload=payload, method=method, headers=headers,
+                     allow_truncated=allow_truncated,
+                     follow_redirects=follow_redirects, deadline=deadline,
+                     validate_certificate=validate_certificate)
+    return fixed_fetch
+
+
+class AppEngineHttpConnection(httplib.HTTPConnection):
+    """Use httplib on App Engine, but compensate for its weirdness.
+
+    The parameters key_file, cert_file, proxy_info, ca_certs,
+    disable_ssl_certificate_validation, and ssl_version are all dropped on
+    the ground.
+    """
+    def __init__(self, host, port=None, key_file=None, cert_file=None,
+                 strict=None, timeout=None, proxy_info=None, ca_certs=None,
+                 disable_ssl_certificate_validation=False,
+                 ssl_version=None):
+        httplib.HTTPConnection.__init__(self, host, port=port,
+                                        strict=strict, timeout=timeout)
+
+
+class AppEngineHttpsConnection(httplib.HTTPSConnection):
+    """Same as AppEngineHttpConnection, but for HTTPS URIs.
+
+    The parameters proxy_info, ca_certs, disable_ssl_certificate_validation,
+    and ssl_version are all dropped on the ground.
+    """
+    def __init__(self, host, port=None, key_file=None, cert_file=None,
+                 strict=None, timeout=None, proxy_info=None, ca_certs=None,
+                 disable_ssl_certificate_validation=False,
+                 ssl_version=None):
+        httplib.HTTPSConnection.__init__(self, host, port=port,
+                                         key_file=key_file,
+                                         cert_file=cert_file, strict=strict,
+                                         timeout=timeout)
+        self._fetch = _new_fixed_fetch(
+                not disable_ssl_certificate_validation)
+
+
 # Use a different connection object for Google App Engine
 try:
+    server_software = os.environ.get('SERVER_SOFTWARE')
+    if server_software:
+        raise NotRunningAppEngineEnvironment()
+    elif not (server_software.startswith('Google App Engine/') or
+              server_software.startswith('Development/')):
+        raise NotRunningAppEngineEnvironment()
+
     try:
         from google.appengine.api import apiproxy_stub_map
         if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
@@ -1098,48 +1154,12 @@ try:
         from google3.apphosting.api.urlfetch import fetch
         from google3.apphosting.api.urlfetch import InvalidURLError
 
-    def _new_fixed_fetch(validate_certificate):
-        def fixed_fetch(url, payload=None, method="GET", headers={},
-                        allow_truncated=False, follow_redirects=True,
-                        deadline=None):
-            if deadline is None:
-                deadline = socket.getdefaulttimeout()
-            return fetch(url, payload=payload, method=method, headers=headers,
-                         allow_truncated=allow_truncated,
-                         follow_redirects=follow_redirects, deadline=deadline,
-                         validate_certificate=validate_certificate)
-        return fixed_fetch
-
-    class AppEngineHttpConnection(httplib.HTTPConnection):
-        """Use httplib on App Engine, but compensate for its weirdness.
-
-        The parameters key_file, cert_file, proxy_info, ca_certs, and
-        disable_ssl_certificate_validation are all dropped on the ground.
-        """
-        def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     strict=None, timeout=None, proxy_info=None, ca_certs=None,
-                     disable_ssl_certificate_validation=False):
-            httplib.HTTPConnection.__init__(self, host, port=port,
-                                            strict=strict, timeout=timeout)
-
-    class AppEngineHttpsConnection(httplib.HTTPSConnection):
-        """Same as AppEngineHttpConnection, but for HTTPS URIs."""
-        def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     strict=None, timeout=None, proxy_info=None, ca_certs=None,
-                     disable_ssl_certificate_validation=False):
-            httplib.HTTPSConnection.__init__(self, host, port=port,
-                                             key_file=key_file,
-                                             cert_file=cert_file, strict=strict,
-                                             timeout=timeout)
-            self._fetch = _new_fixed_fetch(
-                    not disable_ssl_certificate_validation)
-
     # Update the connection classes to use the Googel App Engine specific ones.
     SCHEME_TO_CONNECTION = {
         'http': AppEngineHttpConnection,
         'https': AppEngineHttpsConnection
     }
-except (ImportError, AttributeError):
+except (ImportError, AttributeError, NotRunningAppEngineEnvironment):
     pass
 
 
