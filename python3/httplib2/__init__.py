@@ -719,7 +719,7 @@ class KeyCerts(Credentials):
 
 class ProxyInfo(object):
   """Collect information required to use a proxy."""
-  def __init__(self, proxy_type, proxy_host, proxy_port, proxy_rdns=True, proxy_user=None, proxy_pass=None):
+  def __init__(self, proxy_type, proxy_host, proxy_port, proxy_rdns=True, proxy_user=None, proxy_pass=None, proxy_headers=None):
       """
         Args:
           proxy_type: The type of proxy server.  This must be set to one of
@@ -740,12 +740,14 @@ class ProxyInfo(object):
           proxy_user: The username used to authenticate with the proxy server.
 
           proxy_pass: The password used to authenticate with the proxy server.
+
+          proxy_headers: Additional or modified headers for the proxy connect request.
       """
-      self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns, self.proxy_user, self.proxy_pass = proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass
+      self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns, self.proxy_user, self.proxy_pass, self.proxy_headers = proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers
 
   def astuple(self):
     return (self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns,
-            self.proxy_user, self.proxy_pass)
+            self.proxy_user, self.proxy_pass, self.proxy_headers)
 
   def isgood(self):
     return socks and (self.proxy_host != None) and (self.proxy_port != None)
@@ -798,6 +800,7 @@ def proxy_info_from_url(url, method='http'):
         proxy_port = port,
         proxy_user = username or None,
         proxy_pass = password or None,
+        proxy_headers = None,
     )
 
 
@@ -815,6 +818,7 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
     def __init__(self, host, port=None, timeout=None, proxy_info=None):
         http.client.HTTPConnection.__init__(self, host, port=port,
                                             timeout=timeout)
+        # TODO: implement proxy_info
         self.proxy_info = proxy_info
 
 
@@ -831,6 +835,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  timeout=None, proxy_info=None,
                  ca_certs=None, disable_ssl_certificate_validation=False):
+        # TODO: implement proxy_info
         self.proxy_info = proxy_info
         context = None
         if ca_certs is None:

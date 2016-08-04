@@ -1625,6 +1625,10 @@ class TestProxyInfo(unittest.TestCase):
         pi = httplib2.proxy_info_from_environment()
         self.assertEqual(pi, None)
 
+    def test_proxy_headers(self):
+        headers = {'key0': 'val0', 'key1': 'val1'}
+        pi = httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, 'localhost', 1234, proxy_headers = headers)
+        self.assertEqual(pi.proxy_headers, headers)
 
 if __name__ == '__main__':
     unittest.main()
