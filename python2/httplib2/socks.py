@@ -177,7 +177,7 @@ class socksocket(socket.socket):
         auth = self.__proxy[4] + ":" + self.__proxy[5]
         return "Proxy-Authorization: Basic " + base64.b64encode(auth)
 
-    def setproxy(self, proxytype=None, addr=None, port=None, rdns=True, username=None, password=None):
+    def setproxy(self, proxytype=None, addr=None, port=None, rdns=True, username=None, password=None, headers=None):
         """setproxy(proxytype, addr[, port[, rdns[, username[, password]]]])
         Sets the proxy to be used.
         proxytype -    The type of the proxy to be used. Three types
@@ -193,8 +193,9 @@ class socksocket(socket.socket):
                 The default is no authentication.
         password -    Password to authenticate with to the server.
                 Only relevant when username is also provided.
+        headers -     Additional or modified headers for the proxy connect request.
         """
-        self.__proxy = (proxytype, addr, port, rdns, username, password)
+        self.__proxy = (proxytype, addr, port, rdns, username, password, headers)
 
     def __negotiatesocks5(self, destaddr, destport):
         """__negotiatesocks5(self,destaddr,destport)
@@ -365,9 +366,17 @@ class socksocket(socket.socket):
         else:
             addr = destaddr
         headers =  ["CONNECT ", addr, ":", str(destport), " HTTP/1.1\r\n"]
-        headers += ["Host: ", destaddr, "\r\n"]
-        if (self.__proxy[4] != None and self.__proxy[5] != None):
-                headers += [self.__getauthheader(), "\r\n"]
+        didhost = False
+        didauth = False
+        if self.__proxy[6] != None:
+            for key, val in self.__proxy[6].iteritems():
+                headers += [key, ": ", val, "\r\n"]
+                didhost = (key.lower() == "host")
+                didauth = (key.lower() == "proxy-authorization")
+        if not didhost:
+            headers += ["Host: ", destaddr, "\r\n"]
+        if not didauth and (self.__proxy[4] != None and self.__proxy[5] != None):
+            headers += [self.__getauthheader(), "\r\n"]
         headers.append("\r\n")
         self.sendall("".join(headers).encode())
         # We read the response until we get the string "\r\n\r\n"
