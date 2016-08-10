@@ -45,13 +45,15 @@ import time
 import random
 import errno
 try:
-    from hashlib import sha1 as _sha, md5 as _md5
+    from hashlib import sha1 as _sha, md5 as _md5, sha256 as _sha256
 except ImportError:
     # prior to Python 2.5, these were separate modules
     import sha
     import md5
+    import sha256
     _sha = sha.new
     _md5 = md5.new
+    _sha256 = sha256.new
 import hmac
 from gettext import gettext as _
 import socket
@@ -522,8 +524,8 @@ class BasicAuthentication(Authentication):
 
 
 class DigestAuthentication(Authentication):
-    """Only do qop='auth' and MD5, since that
-    is all Apache currently implements"""
+    """Only support qop='auth' and hash algorithms MD5 and SHA-256
+    """
     def __init__(self, credentials, host, request_uri, headers, response, content, http):
         Authentication.__init__(self, credentials, host, request_uri, headers, response, content, http)
         challenge = _parse_www_authenticate(response, 'www-authenticate')
@@ -533,14 +535,21 @@ class DigestAuthentication(Authentication):
         if self.challenge['qop'] is None:
             raise UnimplementedDigestAuthOptionError( _("Unsupported value for qop: %s." % qop))
         self.challenge['algorithm'] = self.challenge.get('algorithm', 'MD5').upper()
-        if self.challenge['algorithm'] != 'MD5':
+        if not self.challenge['algorithm'] in {'MD5', 'SHA-256'}:
             raise UnimplementedDigestAuthOptionError( _("Unsupported value for algorithm: %s." % self.challenge['algorithm']))
         self.A1 = "".join([self.credentials[0], ":", self.challenge['realm'], ":", self.credentials[1]])
         self.challenge['nc'] = 1
+        self.challenge['userhash'] = (self.challenge.get('userhash', 'false').lower() == 'true')
 
     def request(self, method, request_uri, headers, content, cnonce = None):
         """Modify the request headers"""
-        H = lambda x: _md5(x).hexdigest()
+        if self.challenge['algorithm'] == 'MD5':
+	        H = lambda x: _md5(x).hexdigest()
+        elif self.challenge['algorithm'] == 'SHA-256':
+            H = lambda x: _sha256(x).hexdigest()
+        else:
+            raise UnimplementedDigestAuthOptionError( _("Unsupported value for algorithm: %s." % self.challenge['algorithm']))
+	    
         KD = lambda s, d: H("%s:%s" % (s, d))
         A2 = "".join([method, ":", request_uri])
         self.challenge['cnonce'] = cnonce or _cnonce()
@@ -549,8 +558,8 @@ class DigestAuthentication(Authentication):
                 '%08x' % self.challenge['nc'],
                 self.challenge['cnonce'],
                 self.challenge['qop'], H(A2)))
-        headers['authorization'] = 'Digest username="%s", realm="%s", nonce="%s", uri="%s", algorithm=%s, response=%s, qop=%s, nc=%08x, cnonce="%s"' % (
-                self.credentials[0],
+        headers['authorization'] = 'Digest username="%s", realm="%s", nonce="%s", uri="%s", algorithm=%s, response=%s, qop=%s, nc=%08x, cnonce="%s", userhash=%s' % (
+                H(self.credentials[0]) if self.challenge['userhash'] else self.credentials[0],
                 self.challenge['realm'],
                 self.challenge['nonce'],
                 request_uri,
@@ -558,7 +567,8 @@ class DigestAuthentication(Authentication):
                 request_digest,
                 self.challenge['qop'],
                 self.challenge['nc'],
-                self.challenge['cnonce'])
+                self.challenge['cnonce'],
+                'true' if self.challenge['userhash'] else 'false')
         if self.challenge.get('opaque'):
             headers['authorization'] += ', opaque="%s"' % self.challenge['opaque']
         self.challenge['nc'] += 1
