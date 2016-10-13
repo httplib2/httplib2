@@ -75,7 +75,7 @@ class AppEngineHttpTest(unittest.TestCase):
     response, content = http.request("http://www.google.com")
     self.assertEqual(httplib2.SCHEME_TO_CONNECTION['https'],
                      httplib2.AppEngineHttpsConnection)
-    self.assertEquals(1, len(http.connections))
+    self.assertTrue(2 >= len(http.connections))
     self.assertEquals(response.status, 200)
     self.assertEquals(response['status'], '200')
 
