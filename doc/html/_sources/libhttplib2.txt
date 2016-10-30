@@ -201,7 +201,7 @@ code indicating an error occured. See
    is the socket level timeout. The *ca_certs* parameter is the filename of the
    CA certificates to use. If none is given a default set is used. The
    *disable_ssl_certificate_validation* boolean flag determines if ssl certificate validation
-   is done. The *proxy_info* parameter is an object of type :class:ProxyInfo.
+   is done. The *proxy_info* parameter is an object of type :class:`ProxyInfo`.
 
 
 .. class:: ProxyInfo(proxy_type, proxy_host, proxy_port, [proxy_rdns=None], [proxy_user=None], [proxy_pass=None])
@@ -261,7 +261,7 @@ Http Objects
    The *connection_type* is the type of connection object to use. The supplied
    class should implement the interface of httplib.HTTPConnection.
 
-   The return value is a tuple of (response, content), the first being and instance
+   The return value is a tuple of (response, content), the first being an instance
    of the :class:`Response` class, the second being a string that contains the
    response entity body.
 
@@ -378,7 +378,7 @@ Response Objects
 
 .. attribute:: Response.fromcache
 
-   If ``true`` the the response was returned from the cache.
+   If ``true`` the response was returned from the cache.
 
 
 .. attribute:: Response.version
@@ -402,7 +402,7 @@ Response Objects
    the very last HTTP request and *previous* points to the previous
    :class:`Response` object. In this manner they form a chain going back through
    the responses to the very first response. Will be ``None`` if there are no
-   previous respones.
+   previous responses.
 
 The Response object also populates the header ``content-location``, that
 contains the URI that was ultimately requested. This is useful if redirects were
