@@ -1319,6 +1319,8 @@ class Http(object):
             try:
                 if hasattr(conn, 'sock') and conn.sock is None:
                     conn.connect()
+                if hasattr(body, 'tell') and body.tell() > 0:
+                    body.seek(0) # rewind for retry send file
                 conn.request(method, request_uri, body, headers)
             except socket.timeout:
                 raise
