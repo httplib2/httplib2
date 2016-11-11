@@ -44,6 +44,7 @@ import calendar
 import time
 import random
 import errno
+import tempfile
 try:
     from hashlib import sha1 as _sha, md5 as _md5
 except ImportError:
@@ -726,9 +727,15 @@ class FileCache(object):
 
     def set(self, key, value):
         cacheFullPath = os.path.join(self.cache, self.safe(key))
-        f = file(cacheFullPath, "wb")
-        f.write(value)
-        f.close()
+        tmp = tempfile.NamedTemporaryFile()
+        tmp.write(value)
+        tmp.flush()
+        os.fsync(tmp.fileno())
+        tmp.close()
+        try:
+            os.rename(tmp.name, cacheFullPath)
+        except OSError:
+            pass
 
     def delete(self, key):
         cacheFullPath = os.path.join(self.cache, self.safe(key))
