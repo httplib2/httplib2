@@ -688,7 +688,8 @@ class FileCache(object):
 
     def set(self, key, value):
         cacheFullPath = os.path.join(self.cache, self.safe(key))
-        tmp = tempfile.NamedTemporaryFile()
+        handler, tmp = tempfile.mkstemp()
+        tmp = open(tmp, 'w+b')
         tmp.write(value)
         tmp.flush()
         os.fsync(tmp.fileno())
