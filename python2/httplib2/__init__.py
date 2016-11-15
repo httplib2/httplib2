@@ -727,14 +727,11 @@ class FileCache(object):
 
     def set(self, key, value):
         cacheFullPath = os.path.join(self.cache, self.safe(key))
-        handler, tmp = tempfile.mkstemp()
-        tmp = open(tmp, 'w+b')
-        tmp.write(value)
-        tmp.flush()
-        os.fsync(tmp.fileno())
-        tmp.close()
+        fd, tmpPath = tempfile.mkstemp()
+        os.write(fd, value)
+        os.close(fd)
         try:
-            os.rename(tmp.name, cacheFullPath)
+            os.rename(tmpPath, cacheFullPath)
         except OSError:
             pass
 
