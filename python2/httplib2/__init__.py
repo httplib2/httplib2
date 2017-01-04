@@ -65,9 +65,12 @@ except ImportError:
         socks = None
 
 # Build the appropriate socket wrapper for ssl
+ssl_SSLError = None
+ssl_CertificateError = None
 try:
     import ssl # python 2.6
     ssl_SSLError = ssl.SSLError
+    ssl_CertificateError = ssl.CertificateError
     def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
                          ca_certs, ssl_version, hostname):
         if disable_validation:
@@ -91,7 +94,6 @@ try:
                                    cert_reqs=cert_reqs, ca_certs=ca_certs,
                                    ssl_version=ssl_version)
 except (AttributeError, ImportError):
-    ssl_SSLError = None
     def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
                          ca_certs, ssl_version, hostname):
         if not disable_validation:
@@ -1066,7 +1068,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                         raise CertificateHostnameMismatch(
                             'Server presented certificate that does not match '
                             'host %s: %s' % (hostname, cert), hostname, cert)
-            except ssl_SSLError, e:
+            except (ssl_SSLError, ssl_CertificateError, CertificateHostnameMismatch), e:
                 if sock:
                     sock.close()
                 if self.sock:
@@ -1076,7 +1078,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                 # to get at more detailed error information, in particular
                 # whether the error is due to certificate validation or
                 # something else (such as SSL protocol mismatch).
-                if e.errno == ssl.SSL_ERROR_SSL:
+                if getattr(e, 'errno', None) == ssl.SSL_ERROR_SSL:
                     raise SSLHandshakeError(e)
                 else:
                     raise
