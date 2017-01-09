@@ -1155,18 +1155,11 @@ try:
               server_software.startswith('Development/')):
         raise NotRunningAppEngineEnvironment()
 
-    try:
-        from google.appengine.api import apiproxy_stub_map
-        if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
-            raise ImportError  # Bail out; we're not actually running on App Engine.
-        from google.appengine.api.urlfetch import fetch
-        from google.appengine.api.urlfetch import InvalidURLError
-    except (ImportError, AttributeError):
-        from google3.apphosting.api import apiproxy_stub_map
-        if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
-            raise ImportError  # Bail out; we're not actually running on App Engine.
-        from google3.apphosting.api.urlfetch import fetch
-        from google3.apphosting.api.urlfetch import InvalidURLError
+    from google.appengine.api import apiproxy_stub_map
+    if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
+        raise ImportError  # Bail out; we're not actually running on App Engine.
+    from google.appengine.api.urlfetch import fetch
+    from google.appengine.api.urlfetch import InvalidURLError
 
     # Update the connection classes to use the Googel App Engine specific ones.
     SCHEME_TO_CONNECTION = {
