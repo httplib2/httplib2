@@ -180,7 +180,7 @@
 
       #12 - Cache-Control: only-if-cached incorrectly does request if item not in cache
       #39 - Deprecation warnings in Python 2.6
-      #54 - Http.request fails accesing Google account via http proxy
+      #54 - Http.request fails accessing Google account via http proxy
       #56 - Block on response.read() for HEAD requests.
       #57 - Timeout ignore for Python 2.6
       #58 - Fixed parsing of Cache-Control: header to make it more robust
@@ -232,7 +232,7 @@
    the credentials to being only used on that domain.
 
    Added Http.add_certificate() which allows setting
-   a key and cert for SSL connnections.
+   a key and cert for SSL connections.
 
    Many other bugs fixed.
 
@@ -249,7 +249,7 @@
 
    Change Response._previous to Response.previous.
 
-   Addded Http.follow_all_redirects which forces
+   Added Http.follow_all_redirects which forces
    httplib2 to follow all redirects, as opposed to
    following only the safe redirects. This makes the
    GData protocol easier to use.
