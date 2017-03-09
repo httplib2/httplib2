@@ -121,6 +121,11 @@ else:
     def iri2uri(uri):
         return uri
 
+try:
+    from httplib2 import certs
+except ImportError:
+    import certs
+
 def has_timeout(timeout): # python 2.6
     if hasattr(socket, '_GLOBAL_DEFAULT_TIMEOUT'):
         return (timeout is not None and timeout is not socket._GLOBAL_DEFAULT_TIMEOUT)
@@ -210,15 +215,7 @@ class NotRunningAppEngineEnvironment(HttpLib2Error): pass
 # requesting that URI again.
 DEFAULT_MAX_REDIRECTS = 5
 
-try:
-    # Users can optionally provide a module that tells us where the CA_CERTS
-    # are located.
-    import ca_certs_locater
-    CA_CERTS = ca_certs_locater.get()
-except ImportError:
-    # Default CA certificates file bundled with httplib2.
-    CA_CERTS = os.path.join(
-        os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
+CA_CERTS = certs.where()
 
 # Which headers are hop-by-hop headers by default
 HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade']

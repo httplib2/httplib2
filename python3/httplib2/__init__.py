@@ -57,6 +57,7 @@ except ImportError:
     socks = None
 
 from .iri2uri import iri2uri
+from . import certs
 
 def has_timeout(timeout):
     if hasattr(socket, '_GLOBAL_DEFAULT_TIMEOUT'):
@@ -124,8 +125,7 @@ DEFAULT_MAX_REDIRECTS = 5
 HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade']
 
 # Default CA certificates file bundled with httplib2.
-CA_CERTS = os.path.join(
-        os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
+CA_CERTS = certs.where()
 
 def _get_end2end_headers(response):
     hopbyhop = list(HOP_BY_HOP)
