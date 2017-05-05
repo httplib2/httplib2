@@ -1,0 +1,45 @@
+#!/bin/bash
+set -eux
+# By default, run tests with pytest-forked plugin,
+# disable in terminal for debugging, you may add --forked
+flag_forked="--forked"
+if [[ -z "${CONTINUOUS_INTEGRATION-}" ]] && [[ -t 1 ]] ; then
+	flag_forked=""
+fi
+test_flags=(
+	$@
+	$flag_forked
+	tests/
+)
+
+cd "$( dirname "${BASH_SOURCE[0]}" )/.."
+if [[ -n "${CONTINUOUS_INTEGRATION-}" ]] ; then
+	if [[ "${test_group-}" = "pep8" ]] ; then
+		if [[ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]] ; then
+			flake8 python2/
+		else
+			flake8 python3/ tests/
+		fi
+	else
+		pip install -e .
+		httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_303 $@ tests/ || true
+		httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_head_301 $@ tests/ || true
+		pytest --fulltrace ${test_flags[@]}
+	fi
+	codecov --flags=$(echo $python |tr -d -- '-.')
+else
+	if [[ ! -d ./venv-27 ]] ; then
+		virtualenv --python=python2.7 ./venv-27
+		./venv-27/bin/pip install -e . -r requirements-test.txt
+	fi
+	if [[ ! -d ./venv-36 ]] ; then
+		virtualenv --python=python3.6 ./venv-36
+		./venv-36/bin/pip install -e . -r requirements-test.txt
+	fi
+	./venv-27/bin/pytest ${test_flags[@]}
+	./venv-36/bin/pytest ${test_flags[@]}
+	# FIXME: too many errors
+	# ./venv-27/bin/flake8 python2/
+	# ./venv-36/bin/flake8 python3/ tests/
+fi
+rm -rf ./_httplib2_test_cache

@@ -1,4 +1,3 @@
-
 """
 httplib2
 
@@ -26,7 +25,6 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
 __license__ = "MIT"
 __version__ = "0.10.3"
 
-from __future__ import print_function
 import re
 import sys
 import email
@@ -340,7 +338,7 @@ def _decompressContent(response, new_content):
             # Record the historical presence of the encoding in a way the won't interfere.
             response['-content-encoding'] = response['content-encoding']
             del response['content-encoding']
-    except IOError:
+    except (IOError, zlib.error):
         content = ""
         raise FailedToDecompressContent(_("Content purported to be compressed with %s but failed to decompress.") % response.get('content-encoding'), response, content)
     return content

@@ -1,0 +1,29 @@
+sudo: false
+language: python
+
+matrix:
+  fast_finish: true
+  include:
+    - {python: 2.7, env: test_group=pep8}
+    - {python: 3.6, env: test_group=pep8}
+    - {python: 2.7}
+    - {python: 3.3}
+    - {python: 3.4}
+    - {python: 3.5}
+    - {python: 3.6}
+    - {python: pypy}
+
+cache:
+  apt: true
+  ccache: true
+  pip: true
+  directories:
+    - $HOME/.cache
+addons:
+  apt_packages:
+    # - libssl-dev
+
+install:
+  - pip install 'pip>=9.0' 'setuptools>=36.2' 'codecov>=2.0.15' -r requirements-test.txt
+script:
+  - script/test -sv
