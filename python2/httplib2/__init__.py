@@ -841,20 +841,10 @@ def proxy_info_from_environment(method='http'):
     url = os.environ.get(env_var, os.environ.get(env_var.upper()))
     if not url:
         return
-    pi = proxy_info_from_url(url, method)
+    return proxy_info_from_url(url, method, None)
 
-    no_proxy = os.environ.get('no_proxy', os.environ.get('NO_PROXY', ''))
-    bypass_hosts = []
-    if no_proxy:
-        bypass_hosts = no_proxy.split(',')
-    # special case, no_proxy=* means all hosts bypassed
-    if no_proxy == '*':
-        bypass_hosts = AllHosts
 
-    pi.bypass_hosts = bypass_hosts
-    return pi
-
-def proxy_info_from_url(url, method='http'):
+def proxy_info_from_url(url, method='http', noproxy=None):
     """
     Construct a ProxyInfo from a URL (such as http_proxy env var)
     """
@@ -881,7 +871,7 @@ def proxy_info_from_url(url, method='http'):
         port = dict(https=443, http=80)[method]
 
     proxy_type = 3 # socks.PROXY_TYPE_HTTP
-    return ProxyInfo(
+    pi = ProxyInfo(
         proxy_type = proxy_type,
         proxy_host = host,
         proxy_port = port,
@@ -889,6 +879,19 @@ def proxy_info_from_url(url, method='http'):
         proxy_pass = password or None,
         proxy_headers = None,
     )
+
+    bypass_hosts = []
+    # If not given an explicit noproxy value, respect values in env vars.
+    if noproxy is None:
+        noproxy = os.environ.get('no_proxy', os.environ.get('NO_PROXY', ''))
+    # Special case: A single '*' character means all hosts should be bypassed.
+    if noproxy == '*':
+        bypass_hosts = httplib2.AllHosts
+    elif noproxy.strip():
+        bypass_hosts = noproxy.split(',')
+
+    pi.bypass_hosts = bypass_hosts
+    return pi
 
 
 class HTTPConnectionWithTimeout(httplib.HTTPConnection):
