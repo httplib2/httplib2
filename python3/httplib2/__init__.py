@@ -985,6 +985,10 @@ class Http(object):
         self.credentials.clear()
         self.authorizations = []
 
+    def _conn_key_for(self, scheme, authority):
+        """Compute conn_key for (scheme, authority)"""
+        return scheme + ":" + authority
+
     def _conn_request(self, conn, request_uri, method, body, headers):
         i = 0
         seen_bad_status_line = False
@@ -1179,7 +1183,7 @@ a string that contains the response entity body.
                 scheme = 'https'
                 authority = domain_port[0]
 
-            conn_key = scheme+":"+authority
+            conn_key = self._conn_key_for(scheme, authority)
             if conn_key in self.connections:
                 conn = self.connections[conn_key]
             else:

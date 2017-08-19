@@ -1312,6 +1312,10 @@ class Http(object):
         self.credentials.clear()
         self.authorizations = []
 
+    def _conn_key_for(self, scheme, authority):
+        """Compute conn_key for (scheme, authority)"""
+        return scheme + ":" + authority
+
     def _conn_request(self, conn, request_uri, method, body, headers):
         i = 0
         seen_bad_status_line = False
@@ -1513,7 +1517,7 @@ class Http(object):
 
             proxy_info = self._get_proxy_info(scheme, authority)
 
-            conn_key = scheme+":"+authority
+            conn_key = self._conn_key_for(scheme, authority)
             if conn_key in self.connections:
                 conn = self.connections[conn_key]
             else:
