@@ -889,6 +889,7 @@ def proxy_info_from_url(url, method='http', noproxy=None):
         bypass_hosts = httplib2.AllHosts
     elif noproxy.strip():
         bypass_hosts = noproxy.split(',')
+        bypass_hosts = filter(lambda x:x, bypass_hosts) # to exclude empty string
 
     pi.bypass_hosts = bypass_hosts
     return pi
