@@ -181,14 +181,15 @@ def safename(filename):
         pass
     if isinstance(filename,str):
         filename=filename.encode('utf-8')
-    filemd5 = _md5(filename).hexdigest().encode('utf-8')
+    filemd5 = _md5(filename).hexdigest()
     filename = re_url_scheme.sub(b"", filename)
-    filename = re_slash.sub(b",", filename)
+    #filename = re_slash.sub(b",", filename)
+    filename = urllib.parse.quote(filename, safe='')
 
     # limit length of filename
-    if len(filename)>200:
-        filename=filename[:200]
-    return b",".join((filename, filemd5)).decode('utf-8')
+    if len(filename) > 90:
+        filename = filename[:90]
+    return ",".join((filename, filemd5))
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):
