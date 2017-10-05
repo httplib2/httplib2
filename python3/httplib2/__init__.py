@@ -161,7 +161,7 @@ def urlnorm(uri):
 # Cache filename construction (original borrowed from Venus http://intertwingly.net/code/venus/)
 re_url_scheme    = re.compile(br'^\w+://')
 re_url_scheme_s  = re.compile(r'^\w+://')
-re_slash         = re.compile(br'[?/:|]+')
+re_slash         = re.compile(br'\W+')
 
 def safename(filename):
     """Return a filename suitable for the cache.
@@ -180,16 +180,19 @@ def safename(filename):
     except UnicodeError:
         pass
     if isinstance(filename,str):
-        filename=filename.encode('utf-8')
-    filemd5 = _md5(filename).hexdigest()
+        filename = filename.encode('utf-8')
+    filemd5 = _md5(filename).hexdigest().encode('utf-8')
     filename = re_url_scheme.sub(b"", filename)
-    #filename = re_slash.sub(b",", filename)
-    filename = urllib.parse.quote(filename, safe='')
+    filename = re_slash.sub(b",", filename).strip(b',')
 
-    # limit length of filename
+    # limit length of filename (vital for Windows)
+    # C:\Users\    <username>    \AppData\Local\Temp\  <safe_filename>  ,   <md5>
+    #   9 chars + max 104 chars  +     20 chars      +       x       +  1  +  32  = max 259 chars
+    # Thus max safe filename x = 93 chars, let it be 90 to make a round sum:
     if len(filename) > 90:
         filename = filename[:90]
-    return ",".join((filename, filemd5))
+
+    return b",".join((filename, filemd5)).decode('utf-8')
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):
