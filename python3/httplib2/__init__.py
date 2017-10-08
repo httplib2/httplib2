@@ -174,7 +174,7 @@ def safename(filename):
         filename_bytes = filename
     else:
         filename_bytes = filename.encode('utf-8')
-    filemd5 = _md5(filename_bytes).hexdigest().encode('utf-8')
+    filemd5 = _md5(filename_bytes).hexdigest()
     filename = re_url_scheme.sub("", filename)
     filename = re_unsafe.sub("", filename)
 
