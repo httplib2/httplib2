@@ -159,9 +159,8 @@ def urlnorm(uri):
 
 
 # Cache filename construction (original borrowed from Venus http://intertwingly.net/code/venus/)
-re_url_scheme    = re.compile(br'^\w+://')
-re_url_scheme_s  = re.compile(r'^\w+://')
-re_slash         = re.compile(br'\W+')
+re_url_scheme    = re.compile(r'^\w+://')
+re_unsafe        = re.compile(r'[^\w\-_.()=!]+', re.ASCII)
 
 def safename(filename):
     """Return a filename suitable for the cache.
@@ -170,29 +169,23 @@ def safename(filename):
     can use to store the cache in.
     """
 
-    try:
-        if re_url_scheme_s.match(filename):
-            if isinstance(filename,bytes):
-                filename = filename.decode('utf-8')
-                filename = filename.encode('idna')
-            else:
-                filename = filename.encode('idna')
-    except UnicodeError:
-        pass
-    if isinstance(filename,str):
-        filename = filename.encode('utf-8')
-    filemd5 = _md5(filename).hexdigest().encode('utf-8')
-    filename = re_url_scheme.sub(b"", filename)
-    filename = re_slash.sub(b",", filename).strip(b',')
+    if isinstance(filename, bytes):
+        filename = filename.decode('utf-8')
+        filename_bytes = filename
+    else:
+        filename_bytes = filename.encode('utf-8')
+    filemd5 = _md5(filename_bytes).hexdigest().encode('utf-8')
+    filename = re_url_scheme.sub("", filename)
+    filename = re_unsafe.sub("", filename)
 
     # limit length of filename (vital for Windows)
     # C:\Users\    <username>    \AppData\Local\Temp\  <safe_filename>  ,   <md5>
     #   9 chars + max 104 chars  +     20 chars      +       x       +  1  +  32  = max 259 chars
-    # Thus max safe filename x = 93 chars, let it be 90 to make a round sum:
+    # Thus max safe filename x = 93 chars. Let it be 90 to make a round sum:
     if len(filename) > 90:
         filename = filename[:90]
 
-    return b",".join((filename, filemd5)).decode('utf-8')
+    return ",".join((filename, filemd5))
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):
