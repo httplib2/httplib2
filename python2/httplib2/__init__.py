@@ -5,7 +5,7 @@ httplib2
 A caching http interface that supports ETags and gzip
 to conserve bandwidth.
 
-Requires Python 2.3 or later
+Requires Python 2.7 or later
 
 Changelog:
 2007-08-18, Rick: Modified so it's able to use a socks proxy if needed.
@@ -44,14 +44,7 @@ import calendar
 import time
 import random
 import errno
-try:
-    from hashlib import sha1 as _sha, md5 as _md5
-except ImportError:
-    # prior to Python 2.5, these were separate modules
-    import sha
-    import md5
-    _sha = sha.new
-    _md5 = md5.new
+from hashlib import sha1, md5
 import hmac
 from gettext import gettext as _
 import socket
@@ -68,13 +61,6 @@ except ImportError:
 ssl = None
 ssl_SSLError = None
 ssl_CertificateError = None
-try:
-    import ssl  # python 2.6
-except ImportError:
-    pass
-if ssl is not None:
-    ssl_SSLError = getattr(ssl, 'SSLError', None)
-    ssl_CertificateError = getattr(ssl, 'CertificateError', None)
 
 
 def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
@@ -115,16 +101,10 @@ if ssl is None:
     _ssl_wrap_socket = _ssl_wrap_socket_unsupported
 
 
-if sys.version_info >= (2,3):
-    from iri2uri import iri2uri
-else:
-    def iri2uri(uri):
-        return uri
+from iri2uri import iri2uri
 
-def has_timeout(timeout): # python 2.6
-    if hasattr(socket, '_GLOBAL_DEFAULT_TIMEOUT'):
-        return (timeout is not None and timeout is not socket._GLOBAL_DEFAULT_TIMEOUT)
-    return (timeout is not None)
+def has_timeout(timeout):
+    return (timeout is not None and timeout is not socket._GLOBAL_DEFAULT_TIMEOUT)
 
 __all__ = [
     'Http', 'Response', 'ProxyInfo', 'HttpLib2Error', 'RedirectMissingLocation',
@@ -139,22 +119,6 @@ debuglevel = 0
 
 # A request will be tried 'RETRIES' times if it fails at the socket/connection level.
 RETRIES = 2
-
-# Python 2.3 support
-if sys.version_info < (2,4):
-    def sorted(seq):
-        seq.sort()
-        return seq
-
-# Python 2.3 support
-def HTTPResponse__getheaders(self):
-    """Return list of (header, value) tuples."""
-    if self.msg is None:
-        raise httplib.ResponseNotReady()
-    return self.msg.items()
-
-if not hasattr(httplib.HTTPResponse, 'getheaders'):
-    httplib.HTTPResponse.getheaders = HTTPResponse__getheaders
 
 # All exceptions raised here derive from HttpLib2Error
 class HttpLib2Error(Exception): pass
@@ -276,7 +240,7 @@ def safename(filename):
         pass
     if isinstance(filename,unicode):
         filename=filename.encode('utf-8')
-    filemd5 = _md5(filename).hexdigest()
+    filemd5 = md5(filename).hexdigest()
     filename = re_url_scheme.sub("", filename)
     filename = re_slash.sub(",", filename)
 
@@ -474,11 +438,11 @@ def _updateCache(request_headers, response_headers, content, cache, cachekey):
             cache.set(cachekey, text)
 
 def _cnonce():
-    dig = _md5("%s:%s" % (time.ctime(), ["0123456789"[random.randrange(0, 9)] for i in range(20)])).hexdigest()
+    dig = md5("%s:%s" % (time.ctime(), ["0123456789"[random.randrange(0, 9)] for i in range(20)])).hexdigest()
     return dig[:16]
 
 def _wsse_username_token(cnonce, iso_now, password):
-    return base64.b64encode(_sha("%s%s%s" % (cnonce, iso_now, password)).digest()).strip()
+    return base64.b64encode(sha1("%s%s%s" % (cnonce, iso_now, password)).digest()).strip()
 
 
 # For credentials we need two things, first
@@ -552,7 +516,7 @@ class DigestAuthentication(Authentication):
 
     def request(self, method, request_uri, headers, content, cnonce = None):
         """Modify the request headers"""
-        H = lambda x: _md5(x).hexdigest()
+        H = lambda x: md5(x).hexdigest()
         KD = lambda s, d: H("%s:%s" % (s, d))
         A2 = "".join([method, ":", request_uri])
         self.challenge['cnonce'] = cnonce or _cnonce()
@@ -613,13 +577,13 @@ class HmacDigestAuthentication(Authentication):
         if self.challenge['pw-algorithm'] not in ['SHA-1', 'MD5']:
             raise UnimplementedHmacDigestAuthOptionError( _("Unsupported value for pw-algorithm: %s." % self.challenge['pw-algorithm']))
         if self.challenge['algorithm'] == 'HMAC-MD5':
-            self.hashmod = _md5
+            self.hashmod = md5
         else:
-            self.hashmod = _sha
+            self.hashmod = sha1
         if self.challenge['pw-algorithm'] == 'MD5':
-            self.pwhashmod = _md5
+            self.pwhashmod = md5
         else:
-            self.pwhashmod = _sha
+            self.pwhashmod = sha1
         self.key = "".join([self.credentials[0], ":",
                             self.pwhashmod.new("".join([self.credentials[1], self.challenge['salt']])).hexdigest().lower(),
                             ":", self.challenge['realm']])

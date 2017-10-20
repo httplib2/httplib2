@@ -95,7 +95,7 @@ class UrlSafenameTest(unittest.TestCase):
         self.assertEqual(233, len(httplib2.safename(uri2)))
         self.assertEqual(233, len(httplib2.safename(uri)))
         # Unicode
-        if sys.version_info >= (2,3):
+        if sys.version_info >= (2, 7):
             self.assertEqual( "xn--http,-4y1d.org,fred,a=b,579924c35db315e5a32e3d9963388193", httplib2.safename("http://\u2304.org/fred/?a=b"))
 
 class _MyResponse(io.BytesIO):
@@ -246,7 +246,7 @@ class HttpTest(unittest.TestCase):
         self.assertEqual(response.status, 400)
 
     def testGetIRI(self):
-        if sys.version_info >= (2,3):
+        if sys.version_info >= (2, 7):
             uri = urllib.parse.urljoin(base, "reflector/reflector.cgi?d=\N{CYRILLIC CAPITAL LETTER DJE}")
             (response, content) = self.http.request(uri, "GET")
             d = self.reflector(content)
@@ -1235,7 +1235,7 @@ class HttpPrivateTest(unittest.TestCase):
         self.assertTrue('cache-control' in h)
         self.assertTrue('other' in h)
         self.assertEqual('Stuff', h['other'])
-    
+
     def testConvertByteStr(self):
         with self.assertRaises(TypeError):
             httplib2._convert_byte_str(4)
