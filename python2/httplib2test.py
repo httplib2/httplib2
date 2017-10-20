@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 """
 httplib2test
 
@@ -100,8 +99,7 @@ class UrlSafenameTest(unittest.TestCase):
         self.assertEqual(233, len(httplib2.safename(uri2)))
         self.assertEqual(233, len(httplib2.safename(uri)))
         # Unicode
-        if sys.version_info >= (2, 7):
-            self.assertEqual( "xn--http,-4y1d.org,fred,a=b,579924c35db315e5a32e3d9963388193", httplib2.safename(u"http://\u2304.org/fred/?a=b"))
+        self.assertEqual( "xn--http,-4y1d.org,fred,a=b,579924c35db315e5a32e3d9963388193", httplib2.safename(u"http://\u2304.org/fred/?a=b"))
 
 class _MyResponse(StringIO.StringIO):
     def __init__(self, body, **kwargs):
@@ -254,12 +252,11 @@ class HttpTest(unittest.TestCase):
         self.assertEqual(response.status, 400)
 
     def testGetIRI(self):
-        if sys.version_info >= (2, 7):
-            uri = urlparse.urljoin(base, u"reflector/reflector.cgi?d=\N{CYRILLIC CAPITAL LETTER DJE}")
-            (response, content) = self.http.request(uri, "GET")
-            d = self.reflector(content)
-            self.assertTrue(d.has_key('QUERY_STRING'))
-            self.assertTrue(d['QUERY_STRING'].find('%D0%82') > 0)
+        uri = urlparse.urljoin(base, u"reflector/reflector.cgi?d=\N{CYRILLIC CAPITAL LETTER DJE}")
+        (response, content) = self.http.request(uri, "GET")
+        d = self.reflector(content)
+        self.assertTrue(d.has_key('QUERY_STRING'))
+        self.assertTrue(d['QUERY_STRING'].find('%D0%82') > 0)
 
     def testGetIsDefaultMethod(self):
         # Test that GET is the default method
