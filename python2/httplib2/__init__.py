@@ -12,7 +12,6 @@ Changelog:
 
 """
 from __future__ import print_function
-from __future__ import absolute_import
 
 __author__ = "Joe Gregorio (joe@bitworking.org)"
 __copyright__ = "Copyright 2006, Joe Gregorio"
