@@ -26,6 +26,7 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
 __license__ = "MIT"
 __version__ = "0.10.3"
 
+from __future__ import print_function
 import re
 import sys
 import email
