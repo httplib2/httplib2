@@ -62,7 +62,7 @@ try:
     from httplib2 import socks
 except ImportError:
     try:
-        from . import socks
+        import socks
     except (ImportError, AttributeError):
         socks = None
 
@@ -118,7 +118,7 @@ if ssl is None:
 
 
 if sys.version_info >= (2,3):
-    from .iri2uri import iri2uri
+    from iri2uri import iri2uri
 else:
     def iri2uri(uri):
         return uri
