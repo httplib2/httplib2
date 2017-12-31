@@ -11,6 +11,8 @@ Changelog:
 2007-08-18, Rick: Modified so it's able to use a socks proxy if needed.
 
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 __author__ = "Joe Gregorio (joe@bitworking.org)"
 __copyright__ = "Copyright 2006, Joe Gregorio"
@@ -60,7 +62,7 @@ try:
     from httplib2 import socks
 except ImportError:
     try:
-        import socks
+        from . import socks
     except (ImportError, AttributeError):
         socks = None
 
@@ -116,7 +118,7 @@ if ssl is None:
 
 
 if sys.version_info >= (2,3):
-    from iri2uri import iri2uri
+    from .iri2uri import iri2uri
 else:
     def iri2uri(uri):
         return uri
@@ -291,7 +293,7 @@ def _normalize_headers(headers):
 
 def _parse_cache_control(headers):
     retval = {}
-    if headers.has_key('cache-control'):
+    if 'cache-control' in headers:
         parts =  headers['cache-control'].split(',')
         parts_with_args = [tuple([x.strip().lower() for x in part.split("=", 1)]) for part in parts if -1 != part.find("=")]
         parts_wo_args = [(name.strip().lower(), 1) for name in parts if -1 == name.find("=")]
@@ -316,7 +318,7 @@ def _parse_www_authenticate(headers, headername='www-authenticate'):
     """Returns a dictionary of dictionaries, one dict
     per auth_scheme."""
     retval = {}
-    if headers.has_key(headername):
+    if headername in headers:
         try:
 
             authenticate = headers[headername].strip()
@@ -376,26 +378,26 @@ def _entry_disposition(response_headers, request_headers):
     cc = _parse_cache_control(request_headers)
     cc_response = _parse_cache_control(response_headers)
 
-    if request_headers.has_key('pragma') and request_headers['pragma'].lower().find('no-cache') != -1:
+    if 'pragma' in request_headers and request_headers['pragma'].lower().find('no-cache') != -1:
         retval = "TRANSPARENT"
         if 'cache-control' not in request_headers:
             request_headers['cache-control'] = 'no-cache'
-    elif cc.has_key('no-cache'):
+    elif 'no-cache' in cc:
         retval = "TRANSPARENT"
-    elif cc_response.has_key('no-cache'):
+    elif 'no-cache' in cc_response:
         retval = "STALE"
-    elif cc.has_key('only-if-cached'):
+    elif 'only-if-cached' in cc:
         retval = "FRESH"
-    elif response_headers.has_key('date'):
+    elif 'date' in response_headers:
         date = calendar.timegm(email.Utils.parsedate_tz(response_headers['date']))
         now = time.time()
         current_age = max(0, now - date)
-        if cc_response.has_key('max-age'):
+        if 'max-age' in cc_response:
             try:
                 freshness_lifetime = int(cc_response['max-age'])
             except ValueError:
                 freshness_lifetime = 0
-        elif response_headers.has_key('expires'):
+        elif 'expires' in response_headers:
             expires = email.Utils.parsedate_tz(response_headers['expires'])
             if None == expires:
                 freshness_lifetime = 0
@@ -403,12 +405,12 @@ def _entry_disposition(response_headers, request_headers):
                 freshness_lifetime = max(0, calendar.timegm(expires) - date)
         else:
             freshness_lifetime = 0
-        if cc.has_key('max-age'):
+        if 'max-age' in cc:
             try:
                 freshness_lifetime = int(cc['max-age'])
             except ValueError:
                 freshness_lifetime = 0
-        if cc.has_key('min-fresh'):
+        if 'min-fresh' in cc:
             try:
                 min_fresh = int(cc['min-fresh'])
             except ValueError:
@@ -440,7 +442,7 @@ def _updateCache(request_headers, response_headers, content, cache, cachekey):
     if cachekey:
         cc = _parse_cache_control(request_headers)
         cc_response = _parse_cache_control(response_headers)
-        if cc.has_key('no-store') or cc_response.has_key('no-store'):
+        if 'no-store' in cc or 'no-store' in cc_response:
             cache.delete(cachekey)
         else:
             info = email.Message.Message()
@@ -576,7 +578,7 @@ class DigestAuthentication(Authentication):
         self.challenge['nc'] += 1
 
     def response(self, response, content):
-        if not response.has_key('authentication-info'):
+        if 'authentication-info' not in response:
             challenge = _parse_www_authenticate(response, 'www-authenticate').get('digest', {})
             if 'true' == challenge.get('stale'):
                 self.challenge['nonce'] = challenge['nonce']
@@ -585,7 +587,7 @@ class DigestAuthentication(Authentication):
         else:
             updated_challenge = _parse_www_authenticate(response, 'authentication-info').get('digest', {})
 
-            if updated_challenge.has_key('nextnonce'):
+            if 'nextnonce' in updated_challenge:
                 self.challenge['nonce'] = updated_challenge['nextnonce']
                 self.challenge['nc'] = 1
         return False
@@ -942,25 +944,25 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
                     self.sock.settimeout(self.timeout)
                     # End of difference from httplib.
                 if self.debuglevel > 0:
-                    print "connect: (%s, %s) ************" % (self.host, self.port)
+                    print("connect: (%s, %s) ************" % (self.host, self.port))
                     if use_proxy:
-                        print "proxy: %s ************" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))
+                        print("proxy: %s ************" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
                 if use_proxy:
                     self.sock.connect((self.host, self.port) + sa[2:])
                 else:
                     self.sock.connect(sa)
-            except socket.error, msg:
+            except socket.error as msg:
                 if self.debuglevel > 0:
-                    print "connect fail: (%s, %s)" % (self.host, self.port)
+                    print("connect fail: (%s, %s)" % (self.host, self.port))
                     if use_proxy:
-                        print "proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))
+                        print("proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
                 continue
             break
         if not self.sock:
-            raise socket.error, msg
+            raise socket.error(msg)
 
 class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
     """
@@ -1077,9 +1079,9 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                     self.disable_ssl_certificate_validation, self.ca_certs,
                     self.ssl_version, self.host)
                 if self.debuglevel > 0:
-                    print "connect: (%s, %s)" % (self.host, self.port)
+                    print("connect: (%s, %s)" % (self.host, self.port))
                     if use_proxy:
-                        print "proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))
+                        print("proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
                 if not self.disable_ssl_certificate_validation:
                     cert = self.sock.getpeercert()
                     hostname = self.host.split(':', 0)[0]
@@ -1087,7 +1089,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                         raise CertificateHostnameMismatch(
                             'Server presented certificate that does not match '
                             'host %s: %s' % (hostname, cert), hostname, cert)
-            except (ssl_SSLError, ssl_CertificateError, CertificateHostnameMismatch), e:
+            except (ssl_SSLError, ssl_CertificateError, CertificateHostnameMismatch) as e:
                 if sock:
                     sock.close()
                 if self.sock:
@@ -1103,18 +1105,18 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                     raise
             except (socket.timeout, socket.gaierror):
                 raise
-            except socket.error, msg:
+            except socket.error as msg:
                 if self.debuglevel > 0:
-                    print "connect fail: (%s, %s)" % (self.host, self.port)
+                    print("connect fail: (%s, %s)" % (self.host, self.port))
                     if use_proxy:
-                        print "proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))
+                        print("proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
                 continue
             break
         if not self.sock:
-            raise socket.error, msg
+            raise socket.error(msg)
 
 SCHEME_TO_CONNECTION = {
     'http': HTTPConnectionWithTimeout,
@@ -1299,7 +1301,7 @@ class Http(object):
         challenges = _parse_www_authenticate(response, 'www-authenticate')
         for cred in self.credentials.iter(host):
             for scheme in AUTH_SCHEME_ORDER:
-                if challenges.has_key(scheme):
+                if scheme in challenges:
                     yield AUTH_SCHEME_CLASSES[scheme](cred, host, request_uri, headers, response, content, self)
 
     def add_credentials(self, name, password, domain=""):
@@ -1335,7 +1337,7 @@ class Http(object):
             except ssl_SSLError:
                 conn.close()
                 raise
-            except socket.error, e:
+            except socket.error as e:
                 err = 0
                 if hasattr(e, 'args'):
                     err = getattr(e, 'args')[0]
@@ -1427,29 +1429,29 @@ class Http(object):
                 # Pick out the location header and basically start from the beginning
                 # remembering first to strip the ETag header and decrement our 'depth'
                 if redirections:
-                    if not response.has_key('location') and response.status != 300:
+                    if 'location' not in response and response.status != 300:
                         raise RedirectMissingLocation( _("Redirected but the response is missing a Location: header."), response, content)
                     # Fix-up relative redirects (which violate an RFC 2616 MUST)
-                    if response.has_key('location'):
+                    if 'location' in response:
                         location = response['location']
                         (scheme, authority, path, query, fragment) = parse_uri(location)
                         if authority == None:
                             response['location'] = urlparse.urljoin(absolute_uri, location)
                     if response.status == 301 and method in ["GET", "HEAD"]:
                         response['-x-permanent-redirect-url'] = response['location']
-                        if not response.has_key('content-location'):
+                        if 'content-location' not in response:
                             response['content-location'] = absolute_uri
                         _updateCache(headers, response, content, self.cache, cachekey)
-                    if headers.has_key('if-none-match'):
+                    if 'if-none-match' in headers:
                         del headers['if-none-match']
-                    if headers.has_key('if-modified-since'):
+                    if 'if-modified-since' in headers:
                         del headers['if-modified-since']
                     if 'authorization' in headers and not self.forward_authorization_headers:
                         del headers['authorization']
-                    if response.has_key('location'):
+                    if 'location' in response:
                         location = response['location']
                         old_response = copy.deepcopy(response)
-                        if not old_response.has_key('content-location'):
+                        if 'content-location' not in old_response:
                             old_response['content-location'] = absolute_uri
                         redirect_method = method
                         if response.status in [302, 303]:
@@ -1464,7 +1466,7 @@ class Http(object):
                     raise RedirectLimit("Redirected more times than rediection_limit allows.", response, content)
             elif response.status in [200, 203] and method in ["GET", "HEAD"]:
                 # Don't cache 206's since we aren't going to handle byte range requests
-                if not response.has_key('content-location'):
+                if 'content-location' not in response:
                     response['content-location'] = absolute_uri
                 _updateCache(headers, response, content, self.cache, cachekey)
 
@@ -1506,7 +1508,7 @@ class Http(object):
             else:
                 headers = self._normalize_headers(headers)
 
-            if not headers.has_key('user-agent'):
+            if 'user-agent' not in headers:
                 headers['user-agent'] = "Python-httplib2/%s (gzip)" % __version__
 
             uri = iri2uri(uri)
@@ -1577,7 +1579,7 @@ class Http(object):
             else:
                 cachekey = None
 
-            if method in self.optimistic_concurrency_methods and self.cache and info.has_key('etag') and not self.ignore_etag and 'if-match' not in headers:
+            if method in self.optimistic_concurrency_methods and self.cache and 'etag' in info and not self.ignore_etag and 'if-match' not in headers:
                 # http://www.w3.org/1999/04/Editing/
                 headers['if-match'] = info['etag']
 
@@ -1598,7 +1600,7 @@ class Http(object):
                         break
 
             if cached_value and method in ["GET", "HEAD"] and self.cache and 'range' not in headers:
-                if info.has_key('-x-permanent-redirect-url'):
+                if '-x-permanent-redirect-url' in info:
                     # Should cached permanent redirects be counted in our redirection count? For now, yes.
                     if redirections <= 0:
                         raise RedirectLimit("Redirected more times than rediection_limit allows.", {}, "")
@@ -1628,9 +1630,9 @@ class Http(object):
                         return (response, content)
 
                     if entry_disposition == "STALE":
-                        if info.has_key('etag') and not self.ignore_etag and not 'if-none-match' in headers:
+                        if 'etag' in info and not self.ignore_etag and not 'if-none-match' in headers:
                             headers['if-none-match'] = info['etag']
-                        if info.has_key('last-modified') and not 'last-modified' in headers:
+                        if 'last-modified' in info and not 'last-modified' in headers:
                             headers['if-modified-since'] = info['last-modified']
                     elif entry_disposition == "TRANSPARENT":
                         pass
@@ -1660,13 +1662,13 @@ class Http(object):
                     content = new_content
             else:
                 cc = _parse_cache_control(headers)
-                if cc.has_key('only-if-cached'):
+                if 'only-if-cached' in cc:
                     info['status'] = '504'
                     response = Response(info)
                     content = ""
                 else:
                     (response, content) = self._request(conn, authority, uri, request_uri, method, body, headers, redirections, cachekey)
-        except Exception, e:
+        except Exception as e:
             if self.force_exception_to_status_code:
                 if isinstance(e, HttpLib2ErrorWithResponse):
                     response = e.response
@@ -1752,4 +1754,4 @@ class Response(dict):
         if name == 'dict':
             return self
         else:
-            raise AttributeError, name
+            raise AttributeError(name)
