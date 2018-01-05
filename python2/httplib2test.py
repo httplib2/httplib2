@@ -1,10 +1,9 @@
-#!/usr/bin/env python2.4
 """
 httplib2test
 
 A set of unit tests for httplib2.py.
 
-Requires Python 2.4 or later
+Requires Python 2.7 or later
 """
 
 __author__ = "Joe Gregorio (joe@bitworking.org)"
@@ -31,11 +30,6 @@ try:
     import ssl
 except ImportError:
     pass
-
-# Python 2.3 support
-if not hasattr(unittest.TestCase, 'assertTrue'):
-    unittest.TestCase.assertTrue = unittest.TestCase.failUnless
-    unittest.TestCase.assertFalse = unittest.TestCase.failIf
 
 # The test resources base uri
 base = 'http://bitworking.org/projects/httplib2/test/'
@@ -105,8 +99,7 @@ class UrlSafenameTest(unittest.TestCase):
         self.assertEqual(233, len(httplib2.safename(uri2)))
         self.assertEqual(233, len(httplib2.safename(uri)))
         # Unicode
-        if sys.version_info >= (2,3):
-            self.assertEqual( "xn--http,-4y1d.org,fred,a=b,579924c35db315e5a32e3d9963388193", httplib2.safename(u"http://\u2304.org/fred/?a=b"))
+        self.assertEqual( "xn--http,-4y1d.org,fred,a=b,579924c35db315e5a32e3d9963388193", httplib2.safename(u"http://\u2304.org/fred/?a=b"))
 
 class _MyResponse(StringIO.StringIO):
     def __init__(self, body, **kwargs):
@@ -180,13 +173,9 @@ class HttpTest(unittest.TestCase):
         if os.path.exists(cacheDirName):
             [os.remove(os.path.join(cacheDirName, file)) for file in os.listdir(cacheDirName)]
 
-        if sys.version_info < (2, 6):
-            disable_cert_validation = True
-        else:
-            disable_cert_validation = False
         self.http = httplib2.Http(
                 cacheDirName,
-                disable_ssl_certificate_validation=disable_cert_validation)
+                disable_ssl_certificate_validation=False)
         self.http.clear_credentials()
 
     def testIPv6NoSSL(self):
@@ -263,12 +252,11 @@ class HttpTest(unittest.TestCase):
         self.assertEqual(response.status, 400)
 
     def testGetIRI(self):
-        if sys.version_info >= (2,3):
-            uri = urlparse.urljoin(base, u"reflector/reflector.cgi?d=\N{CYRILLIC CAPITAL LETTER DJE}")
-            (response, content) = self.http.request(uri, "GET")
-            d = self.reflector(content)
-            self.assertTrue('QUERY_STRING' in d)
-            self.assertTrue(d['QUERY_STRING'].find('%D0%82') > 0)
+        uri = urlparse.urljoin(base, u"reflector/reflector.cgi?d=\N{CYRILLIC CAPITAL LETTER DJE}")
+        (response, content) = self.http.request(uri, "GET")
+        d = self.reflector(content)
+        self.assertTrue('QUERY_STRING' in d)
+        self.assertTrue(d['QUERY_STRING'].find('%D0%82') > 0)
 
     def testGetIsDefaultMethod(self):
         # Test that GET is the default method
@@ -510,34 +498,6 @@ class HttpTest(unittest.TestCase):
         (response, content) = self.http.request("https://www.google.com/adsense", "GET")
         self.assertEqual(200, response.status)
         self.assertNotEqual(None, response.previous)
-
-    def testSslCertValidationDoubleDots(self):
-        pass
-        # No longer a valid test.
-        #if sys.version_info >= (2, 6):
-        # Test that we get match a double dot cert
-        #try:
-        #  self.http.request("https://www.appspot.com/", "GET")
-        #except httplib2.CertificateHostnameMismatch:
-        #  self.fail('cert with *.*.appspot.com should not raise an exception.')
-
-    def testSslHostnameValidation(self):
-      pass
-        # No longer a valid test.
-        #if sys.version_info >= (2, 6):
-            # The SSL server at google.com:443 returns a certificate for
-            # 'www.google.com', which results in a host name mismatch.
-            # Note that this test only works because the ssl module and httplib2
-            # do not support SNI; for requests specifying a server name of
-            # 'google.com' via SNI, a matching cert would be returned.
-        #    self.assertRaises(httplib2.CertificateHostnameMismatch,
-        #            self.http.request, "https://google.com/", "GET")
-
-    def testSslCertValidationWithoutSslModuleFails(self):
-        if sys.version_info < (2, 6):
-            http = httplib2.Http(disable_ssl_certificate_validation=False)
-            self.assertRaises(httplib2.CertificateValidationUnsupported,
-                    http.request, "https://www.google.com/", "GET")
 
     def testGetViaHttpsKeyCert(self):
         #  At this point I can only test
