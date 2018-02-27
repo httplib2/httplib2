@@ -146,7 +146,7 @@ DEFAULT_MAX_REDIRECTS = 5
 HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade']
 
 # Default CA certificates file bundled with httplib2.
-DEFAULT_CA_CERTS = os.path.join(
+CA_CERTS = os.path.join(
         os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
 
 def _get_end2end_headers(response):
@@ -929,7 +929,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
         context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
         context.check_hostname = not disable_ssl_certificate_validation
 
-        self.ca_certs = ca_certs if ca_certs else DEFAULT_CA_CERTS
+        self.ca_certs = ca_certs if ca_certs else CA_CERTS
         context.load_verify_locations(self.ca_certs)
 
         if cert_file:
