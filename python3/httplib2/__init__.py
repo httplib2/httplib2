@@ -972,10 +972,10 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                     self.disable_ssl_certificate_validation, self.ca_certs,
                     self.ssl_version, self.host)
                 if self.debuglevel > 0:
-                    print("connect: (%s, %s)" % (self.host, self.port))
+                    print("connect: ({0}, {1})".format(self.host, self.port))
                     if use_proxy:
-                        print("proxy: %s" % str(
-                            (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                        print("proxy: {0}".format(str(
+                            (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))))
             except (ssl.SSLError, ssl.CertificateError) as e:
                 if sock:
                     sock.close()
@@ -995,9 +995,9 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             except socket.error as error_msg:
                 self.error_msg = error_msg
                 if self.debuglevel > 0:
-                    print("connect fail: (%s, %s)" % (self.host, self.port))
+                    print("connect fail: ({0}, {1})".format((self.host, self.port)))
                     if use_proxy:
-                        print("proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                        print("proxy: {0}".format(str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
