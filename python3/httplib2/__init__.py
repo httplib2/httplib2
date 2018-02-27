@@ -26,7 +26,6 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
 __license__ = "MIT"
 __version__ = "0.10.3"
 
-from __future__ import print_function
 import re
 import sys
 import email
@@ -50,7 +49,30 @@ import hmac
 from gettext import gettext as _
 import socket
 import ssl
-_ssl_wrap_socket = ssl.wrap_socket
+
+
+def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
+                     ca_certs, ssl_version, hostname):
+    if disable_validation:
+        cert_reqs = ssl.CERT_NONE
+    else:
+        cert_reqs = ssl.CERT_REQUIRED
+    if ssl_version is None:
+        ssl_version = ssl.PROTOCOL_TLS
+
+    if hasattr(ssl, 'SSLContext'):  # Python 3.2+
+        context = ssl.SSLContext(ssl_version)
+        context.verify_mode = cert_reqs
+        context.check_hostname = (cert_reqs != ssl.CERT_NONE)
+        if cert_file:
+            context.load_cert_chain(cert_file, key_file)
+        if ca_certs:
+            context.load_verify_locations(ca_certs)
+        return context.wrap_socket(sock, server_hostname=hostname)
+    else:
+        return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
+                               cert_reqs=cert_reqs, ca_certs=ca_certs,
+                               ssl_version=ssl_version)
 
 try:
     import socks
@@ -98,6 +120,17 @@ class MalformedHeader(HttpLib2Error): pass
 class RelativeURIError(HttpLib2Error): pass
 class ServerNotFoundError(HttpLib2Error): pass
 class CertificateValidationUnsupportedInPython31(HttpLib2Error): pass
+
+class ProxiesUnavailableError(HttpLib2Error): pass
+
+class SSLHandshakeError(HttpLib2Error): pass
+
+class CertificateHostnameMismatch(SSLHandshakeError):
+    def __init__(self, desc, host, cert):
+        HttpLib2Error.__init__(self, desc)
+        self.host = host
+        self.cert = cert
+
 
 # Open Items:
 # -----------
@@ -819,8 +852,68 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
     def __init__(self, host, port=None, timeout=None, proxy_info=None):
         http.client.HTTPConnection.__init__(self, host, port=port,
                                             timeout=timeout)
-        # TODO: implement proxy_info
-        self.proxy_info = proxy_info
+        if isinstance(proxy_info, ProxyInfo):
+            self.proxy_info = proxy_info
+        else:
+            try:
+                self.proxy_info = proxy_info()
+            except:
+                print('Proxy scheme not supported, define a valid ProxyInfo instance')
+
+    def connect(self):
+        """Connect to the host and port specified in __init__."""
+        if self.proxy_info and socks is None:
+            raise ProxiesUnavailableError(
+                'Proxy support missing but proxy use was requested!')
+        if self.proxy_info and self.proxy_info.isgood():
+            use_proxy = True
+            proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers = self.proxy_info.astuple()
+
+            host = proxy_host
+            port = proxy_port
+        else:
+            use_proxy = False
+
+            host = self.host
+            port = self.port
+            proxy_type = None
+
+        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                if use_proxy:
+                    self.sock = socks.socksocket(af, socktype, proto)
+                    self.sock.setproxy(proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass)
+                else:
+                    self.sock = socket.socket(af, socktype, proto)
+                    self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                if has_timeout(self.timeout):
+                    self.sock.settimeout(self.timeout)
+                if self.debuglevel > 0:
+                    print(
+                        "connect: (%s, %s) ************" % (self.host, self.port))
+                    if use_proxy:
+                        print(
+                            "proxy: %s ************" % str(
+                                (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+
+                self.sock.connect((self.host, self.port) + sa[2:])
+            except socket.error as msg:
+                self.msg = msg
+                if self.debuglevel > 0:
+                    print(
+                        "connect fail: (%s, %s)" % (self.host, self.port))
+                    if use_proxy:
+                        print(
+                            "proxy: %s" % str(
+                                (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                if self.sock:
+                    self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error(self.msg)
 
 
 class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
@@ -836,11 +929,20 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  timeout=None, proxy_info=None,
                  ca_certs=None, disable_ssl_certificate_validation=False):
-        # TODO: implement proxy_info
-        self.proxy_info = proxy_info
+        self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
+        self.ssl_version = None
+        if isinstance(proxy_info, ProxyInfo):
+            self.proxy_info = proxy_info
+        else:
+            try:
+                self.proxy_info = proxy_info()
+            except:
+                print('Proxy scheme not supported, define a valid ProxyInfo instance')
+
         context = None
         if ca_certs is None:
             ca_certs = CA_CERTS
+        self.ca_certs = ca_certs
         if (cert_file or ca_certs):
             if not hasattr(ssl, 'SSLContext'):
                 raise CertificateValidationUnsupportedInPython31()
@@ -857,6 +959,112 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                 self, host, port=port, key_file=key_file,
                 cert_file=cert_file, timeout=timeout, context=context,
                 check_hostname=disable_ssl_certificate_validation ^ True)
+
+    def _GetValidHostsForCert(self, cert):
+        """Returns a list of valid host globs for an SSL certificate.
+
+        Args:
+          cert: A dictionary representing an SSL certificate.
+        Returns:
+          list: A list of valid host globs.
+        """
+        if 'subjectAltName' in cert:
+            return [x[1] for x in cert['subjectAltName']
+                    if x[0].lower() == 'dns']
+        else:
+            return [x[0][1] for x in cert['subject']
+                    if x[0][0].lower() == 'commonname']
+
+    def _ValidateCertificateHostname(self, cert, hostname):
+        """Validates that a given hostname is valid for an SSL certificate.
+
+        Args:
+          cert: A dictionary representing an SSL certificate.
+          hostname: The hostname to test.
+        Returns:
+          bool: Whether or not the hostname is valid for this certificate.
+        """
+        hosts = self._GetValidHostsForCert(cert)
+        for host in hosts:
+            host_re = host.replace('.', '\.').replace('*', '[^.]*')
+            if re.search('^%s$' % (host_re,), hostname, re.I):
+                return True
+        return False
+
+    def connect(self):
+        "Connect to a host on a given (SSL) port."
+        if self.proxy_info and self.proxy_info.isgood():
+            use_proxy = True
+            proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers = self.proxy_info.astuple()
+
+            host = proxy_host
+            port = proxy_port
+        else:
+            use_proxy = False
+
+            host = self.host
+            port = self.port
+            proxy_type = None
+            proxy_headers = None
+
+        address_info = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
+        for family, socktype, proto, canonname, sockaddr in address_info:
+            try:
+                if use_proxy:
+                    sock = socks.socksocket(family, socktype, proto)
+
+                    sock.setproxy(proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass)
+                else:
+                    sock = socket.socket(family, socktype, proto)
+                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                if has_timeout(self.timeout):
+                    sock.settimeout(self.timeout)
+                sock.connect((self.host, self.port))
+                self.sock = ssl_wrap_socket(
+                    sock, self.key_file, self.cert_file,
+                    self.disable_ssl_certificate_validation, self.ca_certs,
+                    self.ssl_version, self.host)
+                if self.debuglevel > 0:
+                    print("connect: (%s, %s)" % (self.host, self.port))
+                    if use_proxy:
+                        print("proxy: %s" % str(
+                            (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                if not self.disable_ssl_certificate_validation:
+                    cert = self.sock.getpeercert()
+                    hostname = self.host.split(':', 0)[0]
+                    if not self._ValidateCertificateHostname(cert, hostname):
+                        raise CertificateHostnameMismatch(
+                            'Server presented certificate that does not match '
+                            'host %s: %s' % (hostname, cert), hostname, cert)
+            except (ssl.SSLError, ssl.CertificateError, CertificateHostnameMismatch) as e:
+                if sock:
+                    sock.close()
+                if self.sock:
+                    self.sock.close()
+                self.sock = None
+                # Unfortunately the ssl module doesn't seem to provide any way
+                # to get at more detailed error information, in particular
+                # whether the error is due to certificate validation or
+                # something else (such as SSL protocol mismatch).
+                if getattr(e, 'errno', None) == ssl.SSL_ERROR_SSL:
+                    raise SSLHandshakeError(e)
+                else:
+                    raise
+            except (socket.timeout, socket.gaierror):
+                raise
+            except socket.error as error_msg:
+                self.error_msg = error_msg
+                if self.debuglevel > 0:
+                    print("connect fail: (%s, %s)" % (self.host, self.port))
+                    if use_proxy:
+                        print("proxy: %s" % str((proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                if self.sock:
+                    self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error(self.error_msg)
 
 
 SCHEME_TO_CONNECTION = {
