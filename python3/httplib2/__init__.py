@@ -53,26 +53,21 @@ import ssl
 
 def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
                      ca_certs, ssl_version, hostname):
-    if disable_validation:
-        cert_reqs = ssl.CERT_NONE
-    else:
-        cert_reqs = ssl.CERT_REQUIRED
+
+    if not ssl.SSLContext:
+        raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
+
     if ssl_version is None:
         ssl_version = ssl.PROTOCOL_TLS
 
-    if hasattr(ssl, 'SSLContext'):  # Python 3.2+
-        context = ssl.SSLContext(ssl_version)
-        context.verify_mode = cert_reqs
-        context.check_hostname = (cert_reqs != ssl.CERT_NONE)
-        if cert_file:
-            context.load_cert_chain(cert_file, key_file)
-        if ca_certs:
-            context.load_verify_locations(ca_certs)
-        return context.wrap_socket(sock, server_hostname=hostname)
-    else:
-        return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
-                               cert_reqs=cert_reqs, ca_certs=ca_certs,
-                               ssl_version=ssl_version)
+    context = ssl.SSLContext(ssl_version)
+    context.verify_mode = ssl.CERT_NONE if disable_validation else ssl.CERT_REQUIRED
+    context.check_hostname = not disable_validation
+    if cert_file:
+        context.load_cert_chain(cert_file, key_file)
+    if ca_certs:
+        context.load_verify_locations(ca_certs)
+    return context.wrap_socket(sock, server_hostname=hostname)
 
 try:
     import socks
@@ -119,17 +114,10 @@ class UnimplementedHmacDigestAuthOptionError(HttpLib2ErrorWithResponse): pass
 class MalformedHeader(HttpLib2Error): pass
 class RelativeURIError(HttpLib2Error): pass
 class ServerNotFoundError(HttpLib2Error): pass
-class CertificateValidationUnsupportedInPython31(HttpLib2Error): pass
 
 class ProxiesUnavailableError(HttpLib2Error): pass
 
 class SSLHandshakeError(HttpLib2Error): pass
-
-class CertificateHostnameMismatch(SSLHandshakeError):
-    def __init__(self, desc, host, cert):
-        HttpLib2Error.__init__(self, desc)
-        self.host = host
-        self.cert = cert
 
 
 # Open Items:
@@ -158,7 +146,7 @@ DEFAULT_MAX_REDIRECTS = 5
 HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade']
 
 # Default CA certificates file bundled with httplib2.
-CA_CERTS = os.path.join(
+DEFAULT_CA_CERTS = os.path.join(
         os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
 
 def _get_end2end_headers(response):
@@ -890,22 +878,22 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
                     self.sock.settimeout(self.timeout)
                 if self.debuglevel > 0:
                     print(
-                        "connect: (%s, %s) ************" % (self.host, self.port))
+                        "connect: ({0}, {1}) ************".format(self.host, self.port))
                     if use_proxy:
                         print(
-                            "proxy: %s ************" % str(
-                                (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                            "proxy: {0} ************".format(str(
+                                (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))))
 
                 self.sock.connect((self.host, self.port) + sa[2:])
             except socket.error as msg:
                 self.msg = msg
                 if self.debuglevel > 0:
                     print(
-                        "connect fail: (%s, %s)" % (self.host, self.port))
+                        "connect fail: ({0}, {1})".format(self.host, self.port))
                     if use_proxy:
                         print(
-                            "proxy: %s" % str(
-                                (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
+                            "proxy: {0}".format(str(
+                                (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -929,7 +917,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                  timeout=None, proxy_info=None,
                  ca_certs=None, disable_ssl_certificate_validation=False):
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
-        self.ssl_version = None
+        self.ssl_version = ssl.PROTOCOL_TLS
 
         if proxy_info:
             if isinstance(proxy_info, ProxyInfo):
@@ -937,60 +925,21 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             else:
                 self.proxy_info = proxy_info('https')
 
-        context = None
-        if ca_certs is None:
-            ca_certs = CA_CERTS
-        self.ca_certs = ca_certs
-        if (cert_file or ca_certs):
-            if not hasattr(ssl, 'SSLContext'):
-                raise CertificateValidationUnsupportedInPython31()
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            if disable_ssl_certificate_validation:
-                context.verify_mode = ssl.CERT_NONE
-            else:
-                context.verify_mode = ssl.CERT_REQUIRED
-            if cert_file:
-                context.load_cert_chain(cert_file, key_file)
-            if ca_certs:
-                context.load_verify_locations(ca_certs)
-        http.client.HTTPSConnection.__init__(
-                self, host, port=port, key_file=key_file,
-                cert_file=cert_file, timeout=timeout, context=context,
-                check_hostname=disable_ssl_certificate_validation ^ True)
+        context = ssl.SSLContext(self.ssl_version)
+        context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
+        context.check_hostname = not disable_ssl_certificate_validation
 
-    def _GetValidHostsForCert(self, cert):
-        """Returns a list of valid host globs for an SSL certificate.
+        self.ca_certs = ca_certs if ca_certs else DEFAULT_CA_CERTS
+        context.load_verify_locations(self.ca_certs)
 
-        Args:
-          cert: A dictionary representing an SSL certificate.
-        Returns:
-          list: A list of valid host globs.
-        """
-        if 'subjectAltName' in cert:
-            return [x[1] for x in cert['subjectAltName']
-                    if x[0].lower() == 'dns']
-        else:
-            return [x[0][1] for x in cert['subject']
-                    if x[0][0].lower() == 'commonname']
+        if cert_file:
+            context.load_cert_chain(cert_file, key_file)
 
-    def _ValidateCertificateHostname(self, cert, hostname):
-        """Validates that a given hostname is valid for an SSL certificate.
-
-        Args:
-          cert: A dictionary representing an SSL certificate.
-          hostname: The hostname to test.
-        Returns:
-          bool: Whether or not the hostname is valid for this certificate.
-        """
-        hosts = self._GetValidHostsForCert(cert)
-        for host in hosts:
-            host_re = host.replace('.', '\.').replace('*', '[^.]*')
-            if re.search('^%s$' % (host_re,), hostname, re.I):
-                return True
-        return False
+        super(HTTPSConnectionWithTimeout, self).__init__(host, port=port, key_file=key_file, cert_file=cert_file,
+                                                         timeout=timeout, context=context)
 
     def connect(self):
-        "Connect to a host on a given (SSL) port."
+        """Connect to a host on a given (SSL) port."""
         if self.proxy_info and self.proxy_info.isgood():
             use_proxy = True
             proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers = self.proxy_info.astuple()
@@ -1027,14 +976,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                     if use_proxy:
                         print("proxy: %s" % str(
                             (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers)))
-                if not self.disable_ssl_certificate_validation:
-                    cert = self.sock.getpeercert()
-                    hostname = self.host.split(':', 0)[0]
-                    if not self._ValidateCertificateHostname(cert, hostname):
-                        raise CertificateHostnameMismatch(
-                            'Server presented certificate that does not match '
-                            'host %s: %s' % (hostname, cert), hostname, cert)
-            except (ssl.SSLError, ssl.CertificateError, CertificateHostnameMismatch) as e:
+            except (ssl.SSLError, ssl.CertificateError) as e:
                 if sock:
                     sock.close()
                 if self.sock:
