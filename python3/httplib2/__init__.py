@@ -54,7 +54,7 @@ import ssl
 def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
                      ca_certs, ssl_version, hostname):
 
-    if hasattr(ssl, 'SSLContext'):
+    if not hasattr(ssl, 'SSLContext'):
         raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
     if ssl_version is None:
@@ -916,6 +916,10 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  timeout=None, proxy_info=None,
                  ca_certs=None, disable_ssl_certificate_validation=False):
+
+        if not hasattr(ssl, 'SSLContext'):
+            raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
+
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
         self.ssl_version = ssl.PROTOCOL_TLS
 
