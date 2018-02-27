@@ -54,7 +54,7 @@ import ssl
 def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
                      ca_certs, ssl_version, hostname):
 
-    if not ssl.SSLContext:
+    if hasattr(ssl, 'SSLContext'):
         raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
     if ssl_version is None:
