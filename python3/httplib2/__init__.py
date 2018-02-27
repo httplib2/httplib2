@@ -852,13 +852,12 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
     def __init__(self, host, port=None, timeout=None, proxy_info=None):
         http.client.HTTPConnection.__init__(self, host, port=port,
                                             timeout=timeout)
-        if isinstance(proxy_info, ProxyInfo):
-            self.proxy_info = proxy_info
-        else:
-            try:
-                self.proxy_info = proxy_info()
-            except:
-                print('Proxy scheme not supported, define a valid ProxyInfo instance')
+
+        if proxy_info:
+            if isinstance(proxy_info, ProxyInfo):
+                self.proxy_info = proxy_info
+            else:
+                self.proxy_info = proxy_info('http')
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
@@ -931,13 +930,12 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                  ca_certs=None, disable_ssl_certificate_validation=False):
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
         self.ssl_version = None
-        if isinstance(proxy_info, ProxyInfo):
-            self.proxy_info = proxy_info
-        else:
-            try:
-                self.proxy_info = proxy_info()
-            except:
-                print('Proxy scheme not supported, define a valid ProxyInfo instance')
+
+        if proxy_info:
+            if isinstance(proxy_info, ProxyInfo):
+                self.proxy_info = proxy_info
+            else:
+                self.proxy_info = proxy_info('https')
 
         context = None
         if ca_certs is None:
