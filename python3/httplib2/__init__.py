@@ -117,8 +117,6 @@ class ServerNotFoundError(HttpLib2Error): pass
 
 class ProxiesUnavailableError(HttpLib2Error): pass
 
-class SSLHandshakeError(HttpLib2Error): pass
-
 
 # Open Items:
 # -----------
@@ -986,14 +984,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                 if self.sock:
                     self.sock.close()
                 self.sock = None
-                # Unfortunately the ssl module doesn't seem to provide any way
-                # to get at more detailed error information, in particular
-                # whether the error is due to certificate validation or
-                # something else (such as SSL protocol mismatch).
-                if getattr(e, 'errno', None) == ssl.SSL_ERROR_SSL:
-                    raise SSLHandshakeError(e)
-                else:
-                    raise
+                raise
             except (socket.timeout, socket.gaierror):
                 raise
             except socket.error as error_msg:
