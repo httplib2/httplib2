@@ -931,6 +931,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                  ca_certs=None, disable_ssl_certificate_validation=False):
 
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
+        self.ca_certs = ca_certs if ca_certs else CA_CERTS
 
         if proxy_info:
             if isinstance(proxy_info, ProxyInfo):
