@@ -129,6 +129,13 @@ HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authoriza
 CA_CERTS = os.path.join(
         os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
 
+# PROTOCOL_TLS is python 3.5.3+. PROTOCOL_SSLv23 is deprecated.
+# Both PROTOCOL_TLS and PROTOCOL_SSLv23 are equivalent and means:
+# > Selects the highest protocol version that both the client and server support.
+# > Despite the name, this option can select “TLS” protocols as well as “SSL”.
+# source: https://docs.python.org/3.5/library/ssl.html#ssl.PROTOCOL_TLS
+DEFAULT_TLS_VERSION = getattr(ssl, 'PROTOCOL_TLS', None) or getattr(ssl, 'PROTOCOL_SSLv23')
+
 
 def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
                      ca_certs, ssl_version, hostname):
@@ -137,7 +144,7 @@ def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
         raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
     if ssl_version is None:
-        ssl_version = ssl.PROTOCOL_TLS
+        ssl_version = DEFAULT_TLS_VERSION
 
     context = ssl.SSLContext(ssl_version)
     context.verify_mode = ssl.CERT_NONE if disable_validation else ssl.CERT_REQUIRED
@@ -920,7 +927,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
-        self.ssl_version = ssl.PROTOCOL_TLS
+        self.ssl_version = DEFAULT_TLS_VERSION
 
         if proxy_info:
             if isinstance(proxy_info, ProxyInfo):
