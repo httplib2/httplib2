@@ -137,22 +137,24 @@ CA_CERTS = os.path.join(
 DEFAULT_TLS_VERSION = getattr(ssl, 'PROTOCOL_TLS', None) or getattr(ssl, 'PROTOCOL_SSLv23')
 
 
-def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
-                     ca_certs, ssl_version, hostname):
-
+def _build_ssl_context(disable_ssl_certificate_validation, ca_certs=None, cert_file=None, key_file=None):
     if not hasattr(ssl, 'SSLContext'):
         raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
-    if ssl_version is None:
-        ssl_version = DEFAULT_TLS_VERSION
+    context = ssl.SSLContext(DEFAULT_TLS_VERSION)
+    context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
+    context.check_hostname = not disable_ssl_certificate_validation
 
-    context = ssl.SSLContext(ssl_version)
-    context.verify_mode = ssl.CERT_NONE if disable_validation else ssl.CERT_REQUIRED
-    context.check_hostname = not disable_validation
+    context.load_verify_locations(ca_certs if ca_certs else CA_CERTS)
+
     if cert_file:
         context.load_cert_chain(cert_file, key_file)
-    if ca_certs:
-        context.load_verify_locations(ca_certs)
+
+    return context
+
+def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
+                     ca_certs, hostname):
+    context = _build_ssl_context(disable_validation, ca_certs, cert_file, key_file)
     return context.wrap_socket(sock, server_hostname=hostname)
 
 def _get_end2end_headers(response):
@@ -925,11 +927,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                  timeout=None, proxy_info=None,
                  ca_certs=None, disable_ssl_certificate_validation=False):
 
-        if not hasattr(ssl, 'SSLContext'):
-            raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
-
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
-        self.ssl_version = DEFAULT_TLS_VERSION
 
         if proxy_info:
             if isinstance(proxy_info, ProxyInfo):
@@ -937,16 +935,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             else:
                 self.proxy_info = proxy_info('https')
 
-        context = ssl.SSLContext(self.ssl_version)
-        context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
-        context.check_hostname = not disable_ssl_certificate_validation
-
-        self.ca_certs = ca_certs if ca_certs else CA_CERTS
-        context.load_verify_locations(self.ca_certs)
-
-        if cert_file:
-            context.load_cert_chain(cert_file, key_file)
-
+        context = _build_ssl_context(self.disable_ssl_certificate_validation, ca_certs, cert_file, key_file)
         super(HTTPSConnectionWithTimeout, self).__init__(host, port=port, key_file=key_file, cert_file=cert_file,
                                                          timeout=timeout, context=context)
 
@@ -981,10 +970,10 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                 if has_timeout(self.timeout):
                     sock.settimeout(self.timeout)
                 sock.connect((self.host, self.port))
-                self.sock = ssl_wrap_socket(
+                self.sock = _ssl_wrap_socket(
                     sock, self.key_file, self.cert_file,
                     self.disable_ssl_certificate_validation, self.ca_certs,
-                    self.ssl_version, self.host)
+                    self.host)
                 if self.debuglevel > 0:
                     print("connect: ({0}, {1})".format(self.host, self.port))
                     if use_proxy:
