@@ -143,7 +143,10 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs=None, cert_f
 
     context = ssl.SSLContext(DEFAULT_TLS_VERSION)
     context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
-    context.check_hostname = not disable_ssl_certificate_validation
+
+    # check_hostname increases security but requires python 3.4+
+    if hasattr(context, 'check_hostname'):
+        context.check_hostname = not disable_ssl_certificate_validation
 
     context.load_verify_locations(ca_certs if ca_certs else CA_CERTS)
 
