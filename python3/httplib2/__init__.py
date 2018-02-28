@@ -51,24 +51,6 @@ import socket
 import ssl
 
 
-def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
-                     ca_certs, ssl_version, hostname):
-
-    if not hasattr(ssl, 'SSLContext'):
-        raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
-
-    if ssl_version is None:
-        ssl_version = ssl.PROTOCOL_TLS
-
-    context = ssl.SSLContext(ssl_version)
-    context.verify_mode = ssl.CERT_NONE if disable_validation else ssl.CERT_REQUIRED
-    context.check_hostname = not disable_validation
-    if cert_file:
-        context.load_cert_chain(cert_file, key_file)
-    if ca_certs:
-        context.load_verify_locations(ca_certs)
-    return context.wrap_socket(sock, server_hostname=hostname)
-
 try:
     import socks
 except ImportError:
@@ -146,6 +128,25 @@ HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authoriza
 # Default CA certificates file bundled with httplib2.
 CA_CERTS = os.path.join(
         os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
+
+
+def ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
+                     ca_certs, ssl_version, hostname):
+
+    if not hasattr(ssl, 'SSLContext'):
+        raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
+
+    if ssl_version is None:
+        ssl_version = ssl.PROTOCOL_TLS
+
+    context = ssl.SSLContext(ssl_version)
+    context.verify_mode = ssl.CERT_NONE if disable_validation else ssl.CERT_REQUIRED
+    context.check_hostname = not disable_validation
+    if cert_file:
+        context.load_cert_chain(cert_file, key_file)
+    if ca_certs:
+        context.load_verify_locations(ca_certs)
+    return context.wrap_socket(sock, server_hostname=hostname)
 
 def _get_end2end_headers(response):
     hopbyhop = list(HOP_BY_HOP)
