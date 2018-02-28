@@ -144,7 +144,9 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs=None, cert_f
     context = ssl.SSLContext(DEFAULT_TLS_VERSION)
     context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
 
-    # check_hostname increases security but requires python 3.4+
+    # check_hostname requires python 3.4+
+    # we will perform the equivalent in HTTPSConnectionWithTimeout.connect() by calling ssl.match_hostname
+    # if check_hostname is not supported.
     if hasattr(context, 'check_hostname'):
         context.check_hostname = not disable_ssl_certificate_validation
 
@@ -154,11 +156,6 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs=None, cert_f
         context.load_cert_chain(cert_file, key_file)
 
     return context
-
-def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
-                     ca_certs, hostname):
-    context = _build_ssl_context(disable_validation, ca_certs, cert_file, key_file)
-    return context.wrap_socket(sock, server_hostname=hostname)
 
 def _get_end2end_headers(response):
     hopbyhop = list(HOP_BY_HOP)
@@ -974,10 +971,18 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                 if has_timeout(self.timeout):
                     sock.settimeout(self.timeout)
                 sock.connect((self.host, self.port))
-                self.sock = _ssl_wrap_socket(
-                    sock, self.key_file, self.cert_file,
-                    self.disable_ssl_certificate_validation, self.ca_certs,
-                    self.host)
+
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+                # Python 3.3 compatibility: emulate the check_hostname behavior
+                if not hasattr(self._context, 'check_hostname') and not self.disable_ssl_certificate_validation:
+                    try:
+                        ssl.match_hostname(self.sock.getpeercert(), self.host)
+                    except Exception:
+                        self.sock.shutdown(socket.SHUT_RDWR)
+                        self.sock.close()
+                        raise
+
                 if self.debuglevel > 0:
                     print("connect: ({0}, {1})".format(self.host, self.port))
                     if use_proxy:
