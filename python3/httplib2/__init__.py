@@ -871,6 +871,8 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
             port = self.port
             proxy_type = None
 
+        socket_err = None
+
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
@@ -891,8 +893,8 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
                                 (proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers))))
 
                 self.sock.connect((self.host, self.port) + sa[2:])
-            except socket.error as msg:
-                self.msg = msg
+            except socket.error as e:
+                socket_err = e
                 if self.debuglevel > 0:
                     print(
                         "connect fail: ({0}, {1})".format(self.host, self.port))
@@ -906,7 +908,7 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
                 continue
             break
         if not self.sock:
-            raise socket.error(self.msg)
+            raise socket_err
 
 
 class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
@@ -964,6 +966,8 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             proxy_type = None
             proxy_headers = None
 
+        socket_err = None
+
         address_info = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
         for family, socktype, proto, canonname, sockaddr in address_info:
             try:
@@ -995,8 +999,8 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                 raise
             except (socket.timeout, socket.gaierror):
                 raise
-            except socket.error as error_msg:
-                self.error_msg = error_msg
+            except socket.error as e:
+                socket_err = e
                 if self.debuglevel > 0:
                     print("connect fail: ({0}, {1})".format((self.host, self.port)))
                     if use_proxy:
@@ -1007,7 +1011,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                 continue
             break
         if not self.sock:
-            raise socket.error(self.error_msg)
+            raise socket_err
 
 
 SCHEME_TO_CONNECTION = {
