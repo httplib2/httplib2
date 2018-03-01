@@ -102,7 +102,6 @@ class ProxiesUnavailableError(HttpLib2Error): pass
 
 # Open Items:
 # -----------
-# Proxy support
 
 # Are we removing the cached content too soon on PUT (only delete on 200 Maybe?)
 
