@@ -137,7 +137,7 @@ CA_CERTS = os.path.join(
 DEFAULT_TLS_VERSION = getattr(ssl, 'PROTOCOL_TLS', None) or getattr(ssl, 'PROTOCOL_SSLv23')
 
 
-def _build_ssl_context(disable_ssl_certificate_validation, ca_certs=None, cert_file=None, key_file=None):
+def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
     if not hasattr(ssl, 'SSLContext'):
         raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
@@ -150,7 +150,7 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs=None, cert_f
     if hasattr(context, 'check_hostname'):
         context.check_hostname = not disable_ssl_certificate_validation
 
-    context.load_verify_locations(ca_certs if ca_certs else CA_CERTS)
+    context.load_verify_locations(ca_certs)
 
     if cert_file:
         context.load_cert_chain(cert_file, key_file)
@@ -936,7 +936,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             else:
                 self.proxy_info = proxy_info('https')
 
-        context = _build_ssl_context(self.disable_ssl_certificate_validation, ca_certs, cert_file, key_file)
+        context = _build_ssl_context(self.disable_ssl_certificate_validation, self.ca_certs, cert_file, key_file)
         super(HTTPSConnectionWithTimeout, self).__init__(host, port=port, key_file=key_file, cert_file=cert_file,
                                                          timeout=timeout, context=context)
 
