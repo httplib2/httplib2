@@ -14,19 +14,28 @@ test_flags=(
 
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 if [[ -n "${CONTINUOUS_INTEGRATION-}" ]] ; then
-	if [[ "${test_group-}" = "pep8" ]] ; then
+	case "${test_group-}" in
+	pep8)
 		if [[ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]] ; then
 			flake8 python2/
 		else
 			flake8 python3/ tests/
 		fi
-	else
+		;;
+	package)
+	    # TODO: sdist bdist_wheel
+	    # but wheels don't roll well with our 2/3 split code base
+		python setup.py sdist
+		pip install dist/httplib2*
+		;;
+	*)
 		pip install -e .
 		httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_303 $@ tests/ || true
 		httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_head_301 $@ tests/ || true
 		pytest --fulltrace ${test_flags[@]}
-	fi
-	codecov --flags=$(echo $python |tr -d -- '-.')
+		codecov --flags=$(echo $python |tr -d -- '-.')
+		;;
+	esac
 else
 	if [[ ! -d ./venv-27 ]] ; then
 		virtualenv --python=python2.7 ./venv-27
@@ -36,10 +45,16 @@ else
 		virtualenv --python=python3.6 ./venv-36
 		./venv-36/bin/pip install -e . -r requirements-test.txt
 	fi
+
 	./venv-27/bin/pytest ${test_flags[@]}
 	./venv-36/bin/pytest ${test_flags[@]}
+
 	# FIXME: too many errors
 	# ./venv-27/bin/flake8 python2/
 	# ./venv-36/bin/flake8 python3/ tests/
+
+    # TODO: sdist bdist_wheel
+    # but wheels don't roll well with our 2/3 split code base
+	./venv-36/bin/python setup.py sdist
 fi
 rm -rf ./_httplib2_test_cache
