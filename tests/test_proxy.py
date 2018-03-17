@@ -4,8 +4,6 @@ Must use pytest --forked or similar technique.
 '''
 import httplib2
 import os
-import pytest
-import sys
 # import tests
 
 
@@ -45,7 +43,6 @@ def test_from_env_none():
     assert pi is None
 
 
-@pytest.mark.skipif(sys.version_info >= (3,), reason='FIXME: https://github.com/httplib2/httplib2/issues/53')
 def test_applies_to():
     os.environ['http_proxy'] = 'http://myproxy.example.com:80'
     os.environ['https_proxy'] = 'http://myproxy.example.com:81'
@@ -56,7 +53,15 @@ def test_applies_to():
     assert not pi.applies_to('www.example.com')
 
 
-@pytest.mark.skipif(sys.version_info >= (3,), reason='FIXME: https://github.com/httplib2/httplib2/issues/53')
+def test_noproxy_trailing_comma():
+    os.environ['http_proxy'] = 'http://myproxy.example.com:80'
+    os.environ['no_proxy'] = 'localhost,other.host,'
+    pi = httplib2.proxy_info_from_environment()
+    assert not pi.applies_to('localhost')
+    assert not pi.applies_to('other.host')
+    assert pi.applies_to('example.domain')
+
+
 def test_noproxy_star():
     os.environ['http_proxy'] = 'http://myproxy.example.com:80'
     os.environ['NO_PROXY'] = '*'
@@ -65,7 +70,6 @@ def test_noproxy_star():
         assert not pi.applies_to(host)
 
 
-@pytest.mark.skipif(sys.version_info >= (3,), reason='FIXME: https://github.com/httplib2/httplib2/issues/53')
 def test_headers():
     headers = {'key0': 'val0', 'key1': 'val1'}
     pi = httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, 'localhost', 1234, proxy_headers=headers)

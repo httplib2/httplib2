@@ -53,8 +53,9 @@ import ssl
 try:
     import socks
 except ImportError:
-    socks = None
-
+    # TODO: remove this fallback and copypasted socksipy module upon py2/3 merge,
+    # idea is to have soft-dependency on any compatible module called socks
+    from . import socks
 from .iri2uri import iri2uri
 
 def has_timeout(timeout):
@@ -745,8 +746,14 @@ class KeyCerts(Credentials):
     pass
 
 
+class AllHosts(object):
+    pass
+
+
 class ProxyInfo(object):
   """Collect information required to use a proxy."""
+  bypass_hosts = ()
+
   def __init__(self, proxy_type, proxy_host, proxy_port, proxy_rdns=True, proxy_user=None, proxy_pass=None, proxy_headers=None):
       """
         Args:
@@ -780,6 +787,21 @@ class ProxyInfo(object):
   def isgood(self):
     return socks and (self.proxy_host != None) and (self.proxy_port != None)
 
+  def applies_to(self, hostname):
+    return not self.bypass_host(hostname)
+
+  def bypass_host(self, hostname):
+    """Has this host been excluded from the proxy config"""
+    if self.bypass_hosts is AllHosts:
+      return True
+
+    bypass = False
+    for domain in self.bypass_hosts:
+      if hostname.endswith(domain):
+        bypass = True
+
+    return bypass
+
 
 def proxy_info_from_environment(method='http'):
     """
@@ -792,10 +814,10 @@ def proxy_info_from_environment(method='http'):
     url = os.environ.get(env_var, os.environ.get(env_var.upper()))
     if not url:
         return
-    return proxy_info_from_url(url, method)
+    return proxy_info_from_url(url, method, noproxy=None)
 
 
-def proxy_info_from_url(url, method='http'):
+def proxy_info_from_url(url, method='http', noproxy=None):
     """
     Construct a ProxyInfo from a URL (such as http_proxy env var)
     """
@@ -821,15 +843,29 @@ def proxy_info_from_url(url, method='http'):
     else:
         port = dict(https=443, http=80)[method]
 
-    proxy_type = 3 # socks.PROXY_TYPE_HTTP
-    return ProxyInfo(
-        proxy_type = proxy_type,
-        proxy_host = host,
-        proxy_port = port,
-        proxy_user = username or None,
-        proxy_pass = password or None,
-        proxy_headers = None,
+    proxy_type = 3  # socks.PROXY_TYPE_HTTP
+    pi = ProxyInfo(
+        proxy_type=proxy_type,
+        proxy_host=host,
+        proxy_port=port,
+        proxy_user=username or None,
+        proxy_pass=password or None,
+        proxy_headers=None,
     )
+
+    bypass_hosts = []
+    # If not given an explicit noproxy value, respect values in env vars.
+    if noproxy is None:
+        noproxy = os.environ.get('no_proxy', os.environ.get('NO_PROXY', ''))
+    # Special case: A single '*' character means all hosts should be bypassed.
+    if noproxy == '*':
+        bypass_hosts = AllHosts
+    elif noproxy.strip():
+        bypass_hosts = noproxy.split(',')
+        bypass_hosts = tuple(filter(bool, bypass_hosts))  # To exclude empty string.
+
+    pi.bypass_hosts = bypass_hosts
+    return pi
 
 
 class HTTPConnectionWithTimeout(http.client.HTTPConnection):
