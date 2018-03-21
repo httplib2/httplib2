@@ -891,6 +891,8 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
                 self.proxy_info = proxy_info
             else:
                 self.proxy_info = proxy_info('http')
+        else:
+            self.proxy_info = None
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
