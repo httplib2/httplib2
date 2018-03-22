@@ -886,13 +886,9 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
         http.client.HTTPConnection.__init__(self, host, port=port,
                                             timeout=timeout)
 
-        if proxy_info:
-            if isinstance(proxy_info, ProxyInfo):
-                self.proxy_info = proxy_info
-            else:
-                self.proxy_info = proxy_info('http')
-        else:
-            self.proxy_info = None
+        self.proxy_info = proxy_info
+        if proxy_info and not isinstance(proxy_info, ProxyInfo):
+            self.proxy_info = proxy_info('http')
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
@@ -969,11 +965,9 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
         self.ca_certs = ca_certs if ca_certs else CA_CERTS
 
-        if proxy_info:
-            if isinstance(proxy_info, ProxyInfo):
-                self.proxy_info = proxy_info
-            else:
-                self.proxy_info = proxy_info('https')
+        self.proxy_info = proxy_info
+        if proxy_info and not isinstance(proxy_info, ProxyInfo):
+            self.proxy_info = proxy_info('https')
 
         context = _build_ssl_context(self.disable_ssl_certificate_validation, self.ca_certs, cert_file, key_file)
         super(HTTPSConnectionWithTimeout, self).__init__(host, port=port, key_file=key_file, cert_file=cert_file,

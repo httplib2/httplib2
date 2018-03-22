@@ -1,4 +1,5 @@
 import httplib2
+import mock
 import os
 import pickle
 import pytest
@@ -165,3 +166,15 @@ def test_ipv6(scheme):
         assert False, 'should get the address family right for IPv6'
     except socket.error:
         pass
+
+
+@pytest.mark.parametrize('conn_type', (httplib2.HTTPConnectionWithTimeout, httplib2.HTTPSConnectionWithTimeout))
+def test_connection_proxy_info_attribute_error(conn_type):
+    # HTTPConnectionWithTimeout did not initialize its .proxy_info attribute
+    # https://github.com/httplib2/httplib2/pull/97
+    # Thanks to Joseph Ryan https://github.com/germanjoey
+    conn = conn_type('no-such-hostname.', 80)
+    # TODO: replace mock with dummy local server
+    with tests.assert_raises(socket.gaierror):
+        with mock.patch('socket.socket.connect', side_effect=socket.gaierror):
+            conn.request('GET', '/')
