@@ -33,7 +33,6 @@ if [[ -n "${CONTINUOUS_INTEGRATION-}" ]] ; then
 		httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_303 $@ tests/ || true
 		httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_head_301 $@ tests/ || true
 		pytest --fulltrace ${test_flags[@]}
-		codecov --flags=$(echo $python |tr -d -- '-.')
 		;;
 	esac
 else

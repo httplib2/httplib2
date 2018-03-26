@@ -26,3 +26,5 @@ install:
   - pip install 'pip>=9.0' 'setuptools>=36.2' 'codecov>=2.0.15' -r requirements-test.txt
 script:
   - script/test -sv
+after_success:
+  - script/ci-coverage
