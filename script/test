@@ -27,6 +27,7 @@ if [[ -n "${CONTINUOUS_INTEGRATION-}" ]] ; then
 	    # but wheels don't roll well with our 2/3 split code base
 		python setup.py sdist
 		pip install dist/httplib2*
+		# TODO: check that installed version matches desired
 		;;
 	*)
 		pip install -e .

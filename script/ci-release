@@ -1,0 +1,38 @@
+#!/bin/bash
+set -eu
+cd "$( dirname "${BASH_SOURCE[0]}" )/.."
+
+check() {
+	local need=$1
+	local version_setup=$(fgrep 'VERSION =' setup.py |tr -d " '" |cut -d\= -f2)
+	local version_py2=$(cd python2 ; python2 -Es -c 'import httplib2;print(httplib2.__version__)')
+	local version_py3=$(cd python3 ; python3 -Es -c 'import httplib2;print(httplib2.__version__)')
+	if [[ "$version_setup" != "$need" ]] ; then
+		echo "error: setup.py VERSION=$version_setup expected=$need" >&1
+		exit 1
+	fi
+	if [[ "$version_py2" != "$need" ]] ; then
+		echo "error: python2/httplib2/__init__.py:__version__=$version_py2 expected=$need" >&1
+		exit 1
+	fi
+	if [[ "$version_py3" != "$need" ]] ; then
+		echo "error: python3/httplib2/__init__.py:__version__=$version_py3 expected=$need" >&1
+		exit 1
+	fi
+}
+
+is_tag=0
+if version_tag=$(git describe --candidates=0 --tags HEAD 2>/dev/null) ; then
+	is_tag=1
+	version_tag=${version_tag##v}
+	check "$version_tag"
+fi
+
+if [[ "$is_tag" -eq 0 ]] ; then
+	last_tag=$(git tag --sort=-version:refname |head -n1)
+	last_tag=${last_tag##v}
+	version_replace="${last_tag}.post$(date -u +%y%m%d%H%M)"
+	sed -E --in-place='' -e "s/VERSION =.+/VERSION = '$version_replace'/" setup.py
+	sed -E --in-place='' -e "s/__version__ =.+/__version__ = '$version_replace'/" python2/httplib2/__init__.py python3/httplib2/__init__.py
+	check "$version_replace"
+fi
