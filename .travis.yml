@@ -57,7 +57,7 @@ jobs:
       env: _=pypi-upload-test
       python: 3.6
       install: pip install $pip_install_common
-      script: script/ci-release
+      script: script/release -auto
       after_success: true
       deploy:
         provider: pypi
@@ -77,7 +77,7 @@ jobs:
       env: _=pypi-upload-public
       python: 3.6
       install: pip install $pip_install_common
-      script: script/ci-release
+      script: script/release -auto
       after_success: true
       deploy:
         provider: pypi
