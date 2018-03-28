@@ -3,8 +3,10 @@ Each test must be run in separate process.
 Must use pytest --forked or similar technique.
 '''
 import httplib2
+import mock
 import os
-# import tests
+import socket
+import tests
 
 
 def test_from_url():
@@ -78,3 +80,13 @@ def test_headers():
     headers = {'key0': 'val0', 'key1': 'val1'}
     pi = httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, 'localhost', 1234, proxy_headers=headers)
     assert pi.proxy_headers == headers
+
+
+def test_github_100_socks_basestring():
+    # https://github.com/httplib2/httplib2/pull/100
+    # NameError: name 'basestring' is not defined
+    # TODO: replace invalid address with dummy local server
+    http = httplib2.Http(proxy_info=httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, '255.255.255.255', 8001))
+    with tests.assert_raises(httplib2.ServerNotFoundError):
+        with mock.patch('socket.socket.connect', side_effect=socket.gaierror):
+            http.request('http://255.255.255.255/', 'GET')
