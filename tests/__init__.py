@@ -24,17 +24,19 @@ from six.moves import http_client, queue
 
 @contextlib.contextmanager
 def assert_raises(exc_type):
+    def _name(t):
+        return getattr(t, '__name__', None) or str(t)
+
+    if not isinstance(exc_type, tuple):
+        exc_type = (exc_type,)
+    names = ', '.join(map(_name, exc_type))
+
     try:
         yield
     except exc_type:
         pass
     else:
-        name = str(exc_type)
-        try:
-            name = exc_type.__name__
-        except AttributeError:
-            pass
-        assert False, 'Expected exception {0}'.format(name)
+        assert False, 'Expected exception(s) {0}'.format(names)
 
 
 class BufferedReader(object):

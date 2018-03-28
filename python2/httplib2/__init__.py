@@ -848,6 +848,11 @@ class ProxyInfo(object):
                 return True
         return False
 
+    def __repr__(self):
+        return (
+            '<ProxyInfo type={p.proxy_type} host:port={p.proxy_host}:{p.proxy_port} rdns={p.proxy_rdns}' +
+            ' user={p.proxy_user} headers={p.proxy_headers}>').format(p=self)
+
 
 def proxy_info_from_environment(method='http'):
     """
