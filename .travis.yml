@@ -21,7 +21,7 @@ python:
 matrix:
   fast_finish: true
 install: pip install $pip_install_common 'codecov>=2.0.15' -r requirements-test.txt
-script: script/test -sv && script/ci-coverage
+script: script/test -sv && codecov
 
 stages:
   - test
