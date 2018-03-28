@@ -7,8 +7,8 @@ if [[ -z "${CONTINUOUS_INTEGRATION-}" ]] ; then
 	exit 1
 fi
 
-if [[ -n "$test_group" ]] ; then
-	echo "skip ci-coverage while executing test_group=$test_group" >&2
+if [[ -n "${test_group-}" ]] ; then
+	echo "skip ci-coverage while executing test_group=${test_group}" >&2
 	exit 0
 fi
 
