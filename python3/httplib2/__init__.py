@@ -43,6 +43,7 @@ import calendar
 import time
 import random
 import errno
+import tempfile
 from hashlib import sha1 as _sha, md5 as _md5
 import hmac
 from gettext import gettext as _
@@ -713,9 +714,13 @@ class FileCache(object):
 
     def set(self, key, value):
         cacheFullPath = os.path.join(self.cache, self.safe(key))
-        f = open(cacheFullPath, "wb")
-        f.write(value)
-        f.close()
+        fd, tmpPath = tempfile.mkstemp()
+        os.write(fd, value)
+        os.close(fd)
+        try:
+            os.rename(tmpPath, cacheFullPath)
+        except OSError:
+            pass
 
     def delete(self, key):
         cacheFullPath = os.path.join(self.cache, self.safe(key))
@@ -1182,6 +1187,8 @@ class Http(object):
             try:
                 if conn.sock is None:
                     conn.connect()
+                if hasattr(body, 'tell') and body.tell() > 0:
+                    body.seek(0) # rewind for retry send file
                 conn.request(method, request_uri, body, headers)
             except socket.timeout:
                 conn.close()
