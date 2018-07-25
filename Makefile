@@ -5,11 +5,11 @@ tests:
 	-cd python2 && python2.6 httplib2test_appengine.py
 	cd python2 && python2.7 httplib2test.py
 	cd python2 && python2.7 httplib2test_appengine.py
-	cd python3 && python3.2 httplib2test.py
+	cd python3 && python3 httplib2test.py
 
 VERSION = $(shell python setup.py --version)
 INLINE_VERSION = $(shell cd python2; python -c "import httplib2;print httplib2.__version__")
-INLINE_VERSION_3 = $(shell cd python3; ~/bin/python3.2 -c "import httplib2;print(httplib2.__version__)")
+INLINE_VERSION_3 = $(shell cd python3; ~/bin/python3 -c "import httplib2;print(httplib2.__version__)")
 DST = dist/httplib2-$(VERSION)
 
 release:

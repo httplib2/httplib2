@@ -13,7 +13,6 @@ env:
     - pip_install_common='pip>=9.0 setuptools>=36.2 wheel>=0.30'
 python:
   - 2.7
-  - 3.3
   - 3.4
   - 3.5
   - 3.6
