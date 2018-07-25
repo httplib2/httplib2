@@ -62,11 +62,9 @@ def test_TODO_vary_no():
     # assert response.fromcache, "Should be from cache"
 
 
-def test_vary_header_simple():
-    """RFC 2616 13.6 When the cache receives a subsequent request whose Request-URI specifies one or more cache entries including a Vary header field, the cache MUST NOT use such a cache entry to construct a response to the new request unless all of the selecting request-headers present in the new request match the corresponding stored request-headers in the original request.
-
-    """
-    # test that the vary header is sent
+def test_vary_header_is_sent():
+    # Verifies RFC 2616 13.6.
+    # See https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html.
     http = httplib2.Http(cache=tests.get_cache_path())
     response = tests.http_response_bytes(
         headers={

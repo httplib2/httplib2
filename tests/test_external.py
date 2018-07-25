@@ -72,9 +72,8 @@ def test_ssl_invalid_ca_certs_path():
 
 @pytest.mark.xfail(
     sys.version_info <= (3,),
-    reason=
-    'FIXME: for unknown reason Python 2.7.10 validates www.google.com against dummy CA www.example.com',
-)
+    reason=('FIXME: for unknown reason Python 2.7.10 validates www.google.com '
+            'against dummy CA www.example.com'))
 def test_ssl_wrong_ca():
     # Test that we get a SSLHandshakeError if we try to access
     # https://www.google.com, using a CA cert file that doesn't contain

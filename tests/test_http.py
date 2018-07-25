@@ -248,8 +248,8 @@ def test_head_301():
 
 
 @pytest.mark.xfail(
-    reason=
-    'FIXME: 301 cache works only with follow_redirects, should work regardless')
+    reason=('FIXME: 301 cache works only with follow_redirects, should work '
+            'regardless'))
 def test_get_301_no_redirect():
     # Test that we cache the 301 response
     http = httplib2.Http(cache=tests.get_cache_path(), timeout=0.5)

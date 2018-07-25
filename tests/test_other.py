@@ -12,9 +12,8 @@ from six.moves import urllib
 
 @pytest.mark.skipif(
     sys.version_info <= (3,),
-    reason=
-    'TODO: httplib2._convert_byte_str was defined only in python3 code version',
-)
+    reason=('TODO: httplib2._convert_byte_str was defined only in python3 code '
+            'version'))
 def test_convert_byte_str():
     with tests.assert_raises(TypeError):
         httplib2._convert_byte_str(4)
@@ -65,9 +64,8 @@ def test_pickle_custom_request_http():
 
 @pytest.mark.xfail(
     sys.version_info >= (3,),
-    reason=
-    'FIXME: for unknown reason global timeout test fails in Python3 with response 200',
-)
+    reason=('FIXME: for unknown reason global timeout test fails in Python3 '
+            'with response 200'))
 def test_timeout_global():
 
     def handler(request):
