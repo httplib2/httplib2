@@ -67,7 +67,6 @@ today_fmt = '%B %d, %Y'
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-
 # Options for HTML output
 # -----------------------
 
@@ -107,7 +106,6 @@ html_last_updated_fmt = '%b %d, %Y'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'httplib2doc'
-
 
 # Options for LaTeX output
 # ------------------------
