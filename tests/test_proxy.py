@@ -1,7 +1,9 @@
-"""Warning: these tests modify os.environ global state.
-Each test must be run in separate process.
-Must use pytest --forked or similar technique.
+"""Proxy tests.
+
+Tests do modify `os.environ` global states. Each test must be run in separate
+process. Must use `pytest --forked` or similar technique.
 """
+
 import httplib2
 import mock
 import os
@@ -84,10 +86,9 @@ def test_headers():
     assert pi.proxy_headers == headers
 
 
-def test_github_100_socks_basestring():
-    # https://github.com/httplib2/httplib2/pull/100
-    # NameError: name 'basestring' is not defined
-    # TODO: replace invalid address with dummy local server
+def test_server_not_found_error_does_not_raise_nameerror_exception():
+    """Invalidates https://github.com/httplib2/httplib2/pull/100."""
+    # TODO: Replace invalid address with dummy local server.
     http = httplib2.Http(
         proxy_info=httplib2.ProxyInfo(
             httplib2.socks.PROXY_TYPE_HTTP, "255.255.255.255", 8001

@@ -3,9 +3,9 @@ import httplib2
 import mock
 import os
 import pytest
+from six.moves import http_client, urllib
 import socket
 import tests
-from six.moves import http_client, urllib
 
 dummy_url = "http://127.0.0.1:1"
 
