@@ -45,70 +45,72 @@ escape_range = [
 
 
 def encode(c):
-  retval = c
-  i = ord(c)
-  for low, high in escape_range:
-    if i < low:
-      break
-    if i >= low and i <= high:
-      retval = ''.join(['%%%2X' % ord(o) for o in c.encode('utf-8')])
-      break
-  return retval
+    retval = c
+    i = ord(c)
+    for low, high in escape_range:
+        if i < low:
+            break
+        if i >= low and i <= high:
+            retval = ''.join(['%%%2X' % ord(o) for o in c.encode('utf-8')])
+            break
+    return retval
 
 
 def iri2uri(uri):
-  """Convert an IRI to a URI. Note that IRIs must be
+    """Convert an IRI to a URI. Note that IRIs must be
     passed in a unicode strings. That is, do not utf-8 encode
     the IRI before passing it into the function."""
-  if isinstance(uri, unicode):
-    (scheme, authority, path, query, fragment) = urlparse.urlsplit(uri)
-    authority = authority.encode('idna')
-    # For each character in 'ucschar' or 'iprivate'
-    #  1. encode as utf-8
-    #  2. then %-encode each octet of that utf-8
-    uri = urlparse.urlunsplit((scheme, authority, path, query, fragment))
-    uri = ''.join([encode(c) for c in uri])
-  return uri
+    if isinstance(uri, unicode):
+        (scheme, authority, path, query, fragment) = urlparse.urlsplit(uri)
+        authority = authority.encode('idna')
+        # For each character in 'ucschar' or 'iprivate'
+        #  1. encode as utf-8
+        #  2. then %-encode each octet of that utf-8
+        uri = urlparse.urlunsplit((scheme, authority, path, query, fragment))
+        uri = ''.join([encode(c) for c in uri])
+    return uri
 
 
 if __name__ == '__main__':
-  import unittest
+    import unittest
 
-  class Test(unittest.TestCase):
+    class Test(unittest.TestCase):
 
-    def test_uris(self):
-      """Test that URIs are invariant under the transformation."""
-      invariant = [
-          u'ftp://ftp.is.co.za/rfc/rfc1808.txt',
-          u'http://www.ietf.org/rfc/rfc2396.txt',
-          u'ldap://[2001:db8::7]/c=GB?objectClass?one',
-          u'mailto:John.Doe@example.com',
-          u'news:comp.infosystems.www.servers.unix', u'tel:+1-816-555-1212',
-          u'telnet://192.0.2.16:80/',
-          u'urn:oasis:names:specification:docbook:dtd:xml:4.1.2'
-      ]
-      for uri in invariant:
-        self.assertEqual(uri, iri2uri(uri))
+        def test_uris(self):
+            """Test that URIs are invariant under the transformation."""
+            invariant = [
+                u'ftp://ftp.is.co.za/rfc/rfc1808.txt',
+                u'http://www.ietf.org/rfc/rfc2396.txt',
+                u'ldap://[2001:db8::7]/c=GB?objectClass?one',
+                u'mailto:John.Doe@example.com',
+                u'news:comp.infosystems.www.servers.unix',
+                u'tel:+1-816-555-1212', u'telnet://192.0.2.16:80/',
+                u'urn:oasis:names:specification:docbook:dtd:xml:4.1.2'
+            ]
+            for uri in invariant:
+                self.assertEqual(uri, iri2uri(uri))
 
-    def test_iri(self):
-      """Test that the right type of escaping is done for each part of the URI."""
-      self.assertEqual('http://xn--o3h.com/%E2%98%84',
-                       iri2uri(u'http://\N{COMET}.com/\N{COMET}'))
-      self.assertEqual('http://bitworking.org/?fred=%E2%98%84',
-                       iri2uri(u'http://bitworking.org/?fred=\N{COMET}'))
-      self.assertEqual('http://bitworking.org/#%E2%98%84',
-                       iri2uri(u'http://bitworking.org/#\N{COMET}'))
-      self.assertEqual('#%E2%98%84', iri2uri(u'#\N{COMET}'))
-      self.assertEqual(
-          '/fred?bar=%E2%98%9A#%E2%98%84',
-          iri2uri(u'/fred?bar=\N{BLACK LEFT POINTING INDEX}#\N{COMET}'))
-      self.assertEqual(
-          '/fred?bar=%E2%98%9A#%E2%98%84',
-          iri2uri(
-              iri2uri(u'/fred?bar=\N{BLACK LEFT POINTING INDEX}#\N{COMET}')))
-      self.assertNotEqual(
-          '/fred?bar=%E2%98%9A#%E2%98%84',
-          iri2uri(u'/fred?bar=\N{BLACK LEFT POINTING INDEX}#\N{COMET}'.encode(
-              'utf-8')))
+        def test_iri(self):
+            """Test that the right type of escaping is done for each part of the URI."""
+            self.assertEqual('http://xn--o3h.com/%E2%98%84',
+                             iri2uri(u'http://\N{COMET}.com/\N{COMET}'))
+            self.assertEqual('http://bitworking.org/?fred=%E2%98%84',
+                             iri2uri(u'http://bitworking.org/?fred=\N{COMET}'))
+            self.assertEqual('http://bitworking.org/#%E2%98%84',
+                             iri2uri(u'http://bitworking.org/#\N{COMET}'))
+            self.assertEqual('#%E2%98%84', iri2uri(u'#\N{COMET}'))
+            self.assertEqual(
+                '/fred?bar=%E2%98%9A#%E2%98%84',
+                iri2uri(u'/fred?bar=\N{BLACK LEFT POINTING INDEX}#\N{COMET}'))
+            self.assertEqual(
+                '/fred?bar=%E2%98%9A#%E2%98%84',
+                iri2uri(
+                    iri2uri(
+                        u'/fred?bar=\N{BLACK LEFT POINTING INDEX}#\N{COMET}')))
+            self.assertNotEqual(
+                '/fred?bar=%E2%98%9A#%E2%98%84',
+                iri2uri(
+                    u'/fred?bar=\N{BLACK LEFT POINTING INDEX}#\N{COMET}'.encode(
+                        'utf-8')))
 
-  unittest.main()
+    unittest.main()

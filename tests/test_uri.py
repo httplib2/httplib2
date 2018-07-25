@@ -3,43 +3,44 @@ import pytest
 
 
 def test_from_std66():
-  cases = (
-      ('http://example.com', ('http', 'example.com', '', None, None)),
-      ('https://example.com', ('https', 'example.com', '', None, None)),
-      ('https://example.com:8080', ('https', 'example.com:8080', '', None,
-                                    None)),
-      ('http://example.com/', ('http', 'example.com', '/', None, None)),
-      ('http://example.com/path', ('http', 'example.com', '/path', None, None)),
-      ('http://example.com/path?a=1&b=2', ('http', 'example.com', '/path',
-                                           'a=1&b=2', None)),
-      ('http://example.com/path?a=1&b=2#fred', ('http', 'example.com', '/path',
-                                                'a=1&b=2', 'fred')),
-      ('http://example.com/path?a=1&b=2#fred', ('http', 'example.com', '/path',
-                                                'a=1&b=2', 'fred')),
-  )
-  for a, b in cases:
-    assert httplib2.parse_uri(a) == b
+    cases = (
+        ('http://example.com', ('http', 'example.com', '', None, None)),
+        ('https://example.com', ('https', 'example.com', '', None, None)),
+        ('https://example.com:8080', ('https', 'example.com:8080', '', None,
+                                      None)),
+        ('http://example.com/', ('http', 'example.com', '/', None, None)),
+        ('http://example.com/path', ('http', 'example.com', '/path', None,
+                                     None)),
+        ('http://example.com/path?a=1&b=2', ('http', 'example.com', '/path',
+                                             'a=1&b=2', None)),
+        ('http://example.com/path?a=1&b=2#fred', ('http', 'example.com',
+                                                  '/path', 'a=1&b=2', 'fred')),
+        ('http://example.com/path?a=1&b=2#fred', ('http', 'example.com',
+                                                  '/path', 'a=1&b=2', 'fred')),
+    )
+    for a, b in cases:
+        assert httplib2.parse_uri(a) == b
 
 
 def test_norm():
-  cases = (
-      ('http://example.org', 'http://example.org/'),
-      ('http://EXAMple.org', 'http://example.org/'),
-      ('http://EXAMple.org?=b', 'http://example.org/?=b'),
-      ('http://EXAMple.org/mypath?a=b', 'http://example.org/mypath?a=b'),
-      ('http://localhost:80', 'http://localhost:80/'),
-  )
-  for a, b in cases:
-    assert httplib2.urlnorm(a)[-1] == b
+    cases = (
+        ('http://example.org', 'http://example.org/'),
+        ('http://EXAMple.org', 'http://example.org/'),
+        ('http://EXAMple.org?=b', 'http://example.org/?=b'),
+        ('http://EXAMple.org/mypath?a=b', 'http://example.org/mypath?a=b'),
+        ('http://localhost:80', 'http://localhost:80/'),
+    )
+    for a, b in cases:
+        assert httplib2.urlnorm(a)[-1] == b
 
-  assert httplib2.urlnorm('http://localhost:80/') == httplib2.urlnorm(
-      'HTTP://LOCALHOST:80')
+    assert httplib2.urlnorm('http://localhost:80/') == httplib2.urlnorm(
+        'HTTP://LOCALHOST:80')
 
-  try:
-    httplib2.urlnorm('/')
-    assert False, 'Non-absolute URIs should raise an exception'
-  except httplib2.RelativeURIError:
-    pass
+    try:
+        httplib2.urlnorm('/')
+        assert False, 'Non-absolute URIs should raise an exception'
+    except httplib2.RelativeURIError:
+        pass
 
 
 @pytest.mark.parametrize(
@@ -71,17 +72,17 @@ def test_norm():
     ),
     ids=str)
 def test_safename(data):
-  result = httplib2.safename(data[0])
-  assert result == data[1]
+    result = httplib2.safename(data[0])
+    assert result == data[1]
 
 
 def test_safename2():
-  assert httplib2.safename('http://www') != httplib2.safename('https://www')
+    assert httplib2.safename('http://www') != httplib2.safename('https://www')
 
-  # Test the max length limits
-  uri = 'http://' + ('w' * 200) + '.org'
-  uri2 = 'http://' + ('w' * 201) + '.org'
-  assert httplib2.safename(uri) != httplib2.safename(uri2)
-  # Max length should be 90 + 1 (',') + 32 = 123
-  assert len(httplib2.safename(uri2)) == 123
-  assert len(httplib2.safename(uri)) == 123
+    # Test the max length limits
+    uri = 'http://' + ('w' * 200) + '.org'
+    uri2 = 'http://' + ('w' * 201) + '.org'
+    assert httplib2.safename(uri) != httplib2.safename(uri2)
+    # Max length should be 90 + 1 (',') + 32 = 123
+    assert len(httplib2.safename(uri2)) == 123
+    assert len(httplib2.safename(uri)) == 123

@@ -25,6 +25,7 @@ LogLevel Info
 
 
 class FunctionalProxyHttpTest(unittest.TestCase):
+
     def setUp(self):
         if not socks:
             raise nose.SkipTest('socks module unavailable')
@@ -43,10 +44,12 @@ class FunctionalProxyHttpTest(unittest.TestCase):
         self.logfile = tempfile.mktemp()
         fd, self.conffile = tempfile.mkstemp()
         f = os.fdopen(fd, 'w')
-        our_cfg = tinyproxy_cfg % {'user': os.getlogin(),
-                                   'pidfile': self.pidfile,
-                                   'port': self.proxyport,
-                                   'logfile': self.logfile}
+        our_cfg = tinyproxy_cfg % {
+            'user': os.getlogin(),
+            'pidfile': self.pidfile,
+            'port': self.proxyport,
+            'logfile': self.logfile
+        }
         f.write(our_cfg)
         f.close()
         try:
@@ -69,17 +72,15 @@ class FunctionalProxyHttpTest(unittest.TestCase):
                 print(open(self.logfile).read())
                 print('end tinyproxy log\n\n\n')
             raise
-        map(os.unlink, (self.pidfile,
-                        self.logfile,
-                        self.conffile))
+        map(os.unlink, (self.pidfile, self.logfile, self.conffile))
 
     def testSimpleProxy(self):
-        proxy_info = httplib2.ProxyInfo(socks.PROXY_TYPE_HTTP,
-                                        'localhost', self.proxyport)
+        proxy_info = httplib2.ProxyInfo(socks.PROXY_TYPE_HTTP, 'localhost',
+                                        self.proxyport)
         client = httplib2.Http(proxy_info=proxy_info)
         src = 'miniserver.py'
-        response, body = client.request('http://localhost:%d/%s' %
-                                        (self.port, src))
+        response, body = client.request(
+            'http://localhost:%d/%s' % (self.port, src))
         self.assertEqual(response.status, 200)
         self.assertEqual(body, open(os.path.join(miniserver.HERE, src)).read())
         lf = open(self.logfile).read()
