@@ -1,4 +1,5 @@
 import email.utils
+import errno
 import httplib2
 import mock
 import os
@@ -7,16 +8,18 @@ from six.moves import http_client, urllib
 import socket
 import tests
 
-dummy_url = "http://127.0.0.1:1"
+CONNECTION_REFUSED_ERROR = socket.error(errno.ECONNREFUSED, "Connection refused.")
+
+DUMMY_URL = "http://127.0.0.1:1"
 
 
 def test_connection_type():
     http = httplib2.Http()
     http.force_exception_to_status_code = False
     response, content = http.request(
-        dummy_url, connection_type=tests.MockHTTPConnection
+        DUMMY_URL, connection_type=tests.MockHTTPConnection
     )
-    assert response["content-location"] == dummy_url
+    assert response["content-location"] == DUMMY_URL
     assert content == b"the body"
 
 
@@ -27,7 +30,7 @@ def test_bad_status_line_retry():
     http.force_exception_to_status_code = False
     try:
         response, content = http.request(
-            dummy_url, connection_type=tests.MockHTTPBadStatusConnection
+            DUMMY_URL, connection_type=tests.MockHTTPBadStatusConnection
         )
     except http_client.BadStatusLine:
         assert tests.MockHTTPBadStatusConnection.num_calls == 2
@@ -49,17 +52,21 @@ def test_unknown_server():
     assert response.status == 400
 
 
-def test_socket_error_raises_exception():
+@mock.patch("socket.socket.connect", spec=True)
+def test_connection_refused_raises_exception(mock_socket_connect):
+    mock_socket_connect.side_effect = CONNECTION_REFUSED_ERROR
     http = httplib2.Http()
     http.force_exception_to_status_code = False
     with tests.assert_raises(socket.error):
-        http.request(dummy_url)
+        http.request(DUMMY_URL)
 
 
-def test_socket_error_returns_response():
+@mock.patch("socket.socket.connect", spec=True)
+def test_connection_refused_returns_response(mock_socket_connect):
+    mock_socket_connect.side_effect = CONNECTION_REFUSED_ERROR
     http = httplib2.Http()
     http.force_exception_to_status_code = True
-    response, content = http.request(dummy_url)
+    response, content = http.request(DUMMY_URL)
     content = content.lower()
     assert response["content-type"] == "text/plain"
     assert (
