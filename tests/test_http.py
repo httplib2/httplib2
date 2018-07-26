@@ -49,17 +49,24 @@ def test_unknown_server():
     assert response.status == 400
 
 
-def test_connection_refused():
+def test_socket_error_raises_exception():
     http = httplib2.Http()
     http.force_exception_to_status_code = False
     with tests.assert_raises(socket.error):
         http.request(dummy_url)
 
-    # Now test with exceptions turned off
+
+def test_socket_error_returns_response():
+    http = httplib2.Http()
     http.force_exception_to_status_code = True
     response, content = http.request(dummy_url)
+    content = content.lower()
     assert response["content-type"] == "text/plain"
-    assert b"Connection refused" in content or b"actively refused" in content
+    assert (
+        b"connection refused" in content
+        or b"actively refused" in content
+        or b"socket is not connected" in content
+    )
     assert response.status == 400
 
 
