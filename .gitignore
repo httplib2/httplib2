@@ -24,7 +24,6 @@ pip-log.txt
 
 # Unit test / coverage reports
 .coverage
-.pytest_cache/
 .tox
 nosetests.xml
 
@@ -41,7 +40,3 @@ nosetests.xml
 
 # httplib2
 .cache
-
-# Others
-default.profraw
-

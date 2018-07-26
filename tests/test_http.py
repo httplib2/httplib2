@@ -2,24 +2,21 @@ import email.utils
 import httplib2
 import mock
 import os
-import portpicker
 import pytest
 from six.moves import http_client, urllib
 import socket
 import tests
 
-DUMMY_BASE_HOST = "127.0.0.1"
-DUMMY_BASE_PORT = portpicker.pick_unused_port()
-DUMMY_URL = "http://{}:{}".format(DUMMY_BASE_HOST, DUMMY_BASE_PORT)
+dummy_url = "http://127.0.0.1:1"
 
 
 def test_connection_type():
     http = httplib2.Http()
     http.force_exception_to_status_code = False
     response, content = http.request(
-        DUMMY_URL, connection_type=tests.MockHTTPConnection
+        dummy_url, connection_type=tests.MockHTTPConnection
     )
-    assert response["content-location"] == DUMMY_URL
+    assert response["content-location"] == dummy_url
     assert content == b"the body"
 
 
@@ -30,7 +27,7 @@ def test_bad_status_line_retry():
     http.force_exception_to_status_code = False
     try:
         response, content = http.request(
-            DUMMY_URL, connection_type=tests.MockHTTPBadStatusConnection
+            dummy_url, connection_type=tests.MockHTTPBadStatusConnection
         )
     except http_client.BadStatusLine:
         assert tests.MockHTTPBadStatusConnection.num_calls == 2
@@ -52,16 +49,15 @@ def test_unknown_server():
     assert response.status == 400
 
 
-@mock.patch.object()
 def test_connection_refused():
     http = httplib2.Http()
     http.force_exception_to_status_code = False
     with tests.assert_raises(socket.error):
-        http.request(DUMMY_URL)
+        http.request(dummy_url)
 
     # Now test with exceptions turned off
     http.force_exception_to_status_code = True
-    response, content = http.request(DUMMY_URL)
+    response, content = http.request(dummy_url)
     assert response["content-type"] == "text/plain"
     assert b"Connection refused" in content or b"actively refused" in content
     assert response.status == 400

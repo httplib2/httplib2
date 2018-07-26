@@ -1,6 +1,5 @@
 flake8==3.4.1
 mock==2.0.0
-portpicker==1.2.0
 pytest-cov==2.5.1
 pytest-forked==0.2
 pytest-randomly==1.2.1
