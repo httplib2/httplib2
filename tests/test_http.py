@@ -8,9 +8,11 @@ from six.moves import http_client, urllib
 import socket
 import tests
 
-CONNECTION_REFUSED_ERROR = socket.error(errno.ECONNREFUSED, "Connection refused.")
-
 DUMMY_URL = "http://127.0.0.1:1"
+
+
+def _raise_connection_refused_exception(*args, **kwargs):
+    raise socket.error(errno.ECONNREFUSED, "Connection refused.")
 
 
 def test_connection_type():
@@ -54,7 +56,7 @@ def test_unknown_server():
 
 @mock.patch("socket.socket.connect", spec=True)
 def test_connection_refused_raises_exception(mock_socket_connect):
-    mock_socket_connect.side_effect = CONNECTION_REFUSED_ERROR
+    mock_socket_connect.side_effect = _raise_connection_refused_exception
     http = httplib2.Http()
     http.force_exception_to_status_code = False
     with tests.assert_raises(socket.error):
@@ -63,7 +65,7 @@ def test_connection_refused_raises_exception(mock_socket_connect):
 
 @mock.patch("socket.socket.connect", spec=True)
 def test_connection_refused_returns_response(mock_socket_connect):
-    mock_socket_connect.side_effect = CONNECTION_REFUSED_ERROR
+    mock_socket_connect.side_effect = _raise_connection_refused_exception
     http = httplib2.Http()
     http.force_exception_to_status_code = True
     response, content = http.request(DUMMY_URL)
