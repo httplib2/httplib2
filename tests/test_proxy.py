@@ -4,11 +4,19 @@ Tests do modify `os.environ` global states. Each test must be run in separate
 process. Must use `pytest --forked` or similar technique.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import httplib2
 import mock
 import os
 import socket
 import tests
+
+
+def _raise_name_not_known_error(*args, **kwargs):
+    raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
 
 
 def test_from_url():
@@ -86,14 +94,14 @@ def test_headers():
     assert pi.proxy_headers == headers
 
 
-def test_server_not_found_error_does_not_raise_nameerror_exception():
+@mock.patch("socket.socket.connect", spec=True)
+def test_server_not_found_error_is_raised_for_invalid_hostname(mock_socket_connect):
     """Invalidates https://github.com/httplib2/httplib2/pull/100."""
-    # TODO: Replace invalid address with dummy local server.
+    mock_socket_connect.side_effect = _raise_name_not_known_error
     http = httplib2.Http(
         proxy_info=httplib2.ProxyInfo(
             httplib2.socks.PROXY_TYPE_HTTP, "255.255.255.255", 8001
         )
     )
     with tests.assert_raises(httplib2.ServerNotFoundError):
-        with mock.patch("socket.socket.connect", side_effect=socket.gaierror):
-            http.request("http://255.255.255.255/", "GET")
+        http.request("http://invalid.hostname.foo.bar/", "GET")
