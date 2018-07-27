@@ -20,11 +20,15 @@ import unittest
 
 sys.path.insert(0, "/usr/local/google-cloud-sdk/platform/google_appengine")
 
-import dev_appserver
-
-dev_appserver.fix_sys_path()
-
-from google.appengine.ext import testbed
+try:
+    import dev_appserver
+    dev_appserver.fix_sys_path()
+    from google.appengine.ext import testbed
+except ImportError:
+    if os.environ.get("TRAVIS_PYTHON_VERSION") is not None:
+        sys.exit(0)
+    else:
+        raise
 
 # Ensure that we are not loading the httplib2 version included in the Google
 # App Engine SDK.
