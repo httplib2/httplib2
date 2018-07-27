@@ -11,6 +11,7 @@ from __future__ import print_function
 import httplib2
 import mock
 import os
+import pytest
 import socket
 import tests
 
