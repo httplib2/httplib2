@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Small, fast HTTP client library for Python."""
 
 __author__ = "Joe Gregorio (joe@bitworking.org)"
@@ -1359,6 +1360,70 @@ SCHEME_TO_CONNECTION = {
     "http": HTTPConnectionWithTimeout,
     "https": HTTPSConnectionWithTimeout,
 }
+
+
+# Use a different connection object for Google App Engine.
+try:
+    from google.appengine.api import apiproxy_stub_map
+
+    if apiproxy_stub_map.apiproxy.GetStub("urlfetch") is None:
+        raise ImportError  # We're not actually running on Google App Engine.
+
+    from google.appengine.api import urlfetch as gae_urlfetch
+
+    def _gae_url_fetch_wrapper(validate_certificate):
+        def fetch(
+            url,
+            payload=None,
+            method="GET",
+            headers={},
+            allow_truncated=False,
+            follow_redirects=True,
+            deadline=None,
+        ):
+            return gae_urlfetch.fetch(
+                url,
+                payload=payload,
+                method=method,
+                headers=headers,
+                allow_truncated=allow_truncated,
+                follow_redirects=follow_redirects,
+                deadline=deadline,
+                validate_certificate=validate_certificate,
+            )
+
+        return fetch
+
+    class AppEngineHttpsConnection(http.client.HTTPSConnection):
+        """HTTPSConnection subclass that supports Google App Engine."""
+
+        def __init__(
+            self,
+            host,
+            port=None,
+            key_file=None,
+            cert_file=None,
+            timeout=None,
+            proxy_info=None,
+            ca_certs=None,
+            disable_ssl_certificate_validation=False,
+        ):
+            httplib.HTTPSConnection.__init__(
+                self,
+                host,
+                port=port,
+                key_file=key_file,
+                cert_file=cert_file,
+                timeout=timeout,
+            )
+            self._fetch = _gae_url_fetch_wrapper(not disable_ssl_certificate_validation)
+
+    AppEngineHttpConnection = AppEngineHttpsConnection
+
+    SCHEME_TO_CONNECTION["http"] = AppEngineHttpConnection
+    SCHEME_TO_CONNECTION["http"] = AppEngineHttpsConnection
+except (ImportError, AttributeError):
+    pass
 
 
 class Http(object):
