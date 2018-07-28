@@ -37,7 +37,7 @@ env:
 # From https://github.com/travis-ci/travis-ci/issues/738#issuecomment-214710901.
 before_script:
   - wget $GAE_SDK_URL -nv
-  - unzip -q GAE_SDK_FILE_NAME.zip
+  - unzip -q $GAE_SDK_ZIP_FILE_NAME
 
 script: script/test -sv && codecov
 
