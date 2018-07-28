@@ -19,6 +19,7 @@ default.profraw
 develop-eggs
 dist
 eggs
+google-cloud-sdk/*
 google_appengine/*
 google_appengine_*.zip
 lib

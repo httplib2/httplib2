@@ -34,14 +34,13 @@ env:
     - PATH=$CLOUDSDK_SDK_BIN_PATH:$PATH
     - PYTHONPATH=$PYTHONPATH:$GAE_PYTHON_LIB_PATH
 
-# Based on https://stackoverflow.com/a/38776394.
-before_script:
+script:
+  # Based on https://stackoverflow.com/a/38776394.
   - if [ ! -d "$CLOUDSDK_SDK_BIN_PATH" ]; then rm -rf $CLOUDSDK_SDK_PATH; curl $CLOUDSDK_SDK_INSTALLER | bash; fi
   - source $CLOUDSDK_SDK_PATH/path.bash.inc
+  - gcloud components update
   - gcloud components install app-engine-python
   - gcloud components install app-engine-python-extras
-
-script:
   - script/test -sv && codecov
 
 stages:
