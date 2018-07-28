@@ -17,11 +17,7 @@ import os
 import pytest
 import sys
 
-_SKIPPING_ON_TRAVIS_MESSAGE = (
-    "There is no official pip package for Google App Engine SDK so "
-    "skipping all test cases on Travis."
-)
-
+# For local testing.
 sys.path.insert(0, "/usr/local/google-cloud-sdk/platform/google_appengine")
 
 try:
@@ -31,20 +27,23 @@ try:
     from google.appengine.ext import testbed
 except ImportError:
     if os.environ.get("TRAVIS_PYTHON_VERSION") is not None:
-        pytestmark = pytest.mark.skip(_SKIPPING_ON_TRAVIS_MESSAGE)
+        pytestmark = pytest.mark.skip(
+            "Unable to import Google App Engine SDK. Skipping all tests."
+        )
     else:
         raise
 
-# Ensure that we are not loading the httplib2 version included in the Google
-# App Engine SDK.
-sys.path.insert(
-    0,
-    os.path.join(
-        os.path.split(os.path.dirname(os.path.realpath(__file__)))[0], "python2"
-    ),
+# For local testing. Ensure that we are not loading the httplib2 version
+# included in the Google App Engine SDK.
+if os.environ.get("TRAVIS_PYTHON_VERSION") is None:
+    _parent_dir = '/'.join(os.path.realpath(__file__).split('/')[:-2])
+    sys.path.insert(0, os.path.join(_parent_dir, "python2"))
+
+
+@pytest.mark.skipif(
+    os.environ.get("TRAVIS_PYTHON_VERSION") not in (None, "2.7"),
+    reason="TODO: Requires further testing with Google SDK & Python 3.",
 )
-
-
 class Test(object):
     def setup_method(self):
         self._testbed = None
