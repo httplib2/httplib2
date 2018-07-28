@@ -18,6 +18,11 @@ import pytest
 import sys
 import unittest
 
+_SKIPPING_ON_TRAVIS_MESSAGE = (
+    "There is no official pip package for Google App Engine SDK so "
+    "skipping all test cases on Travis."
+)
+
 sys.path.insert(0, "/usr/local/google-cloud-sdk/platform/google_appengine")
 
 try:
@@ -27,7 +32,7 @@ try:
     from google.appengine.ext import testbed
 except ImportError:
     if os.environ.get("TRAVIS_PYTHON_VERSION") is not None:
-        sys.exit(0)
+        pytestmark = pytest.mark.skip(_SKIPPING_ON_TRAVIS_MESSAGE)
     else:
         raise
 
@@ -40,16 +45,7 @@ sys.path.insert(
     ),
 )
 
-_DISABLED_ON_TRAVIS_MESSAGE = (
-    "Note that there is no official pip package for Google App Engine SDK so "
-    "disabling all test cases on Travis."
-)
 
-
-@pytest.mark.skipif(
-    os.environ.get("TRAVIS_PYTHON_VERSION") is not None,
-    reason=_DISABLED_ON_TRAVIS_MESSAGE,
-)
 class Test(object):
     def setup_method(self):
         self._testbed = None
