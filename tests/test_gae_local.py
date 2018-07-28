@@ -16,7 +16,6 @@ import mock
 import os
 import pytest
 import sys
-import unittest
 
 _SKIPPING_ON_TRAVIS_MESSAGE = (
     "There is no official pip package for Google App Engine SDK so "
