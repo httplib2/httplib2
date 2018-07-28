@@ -27,17 +27,16 @@ env:
     - CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true
     - GAE_SDK_CHECK=https://appengine.google.com/api/updatecheck
     - GAE_SDK_VERSION=$(curl -s $GAE_SDK_CHECK | awk -F '\"' '/release/ {print $2}')
-    - GAE_SDK_FILE_NAME=google_appengine_$GAE_SDK_VERSION
-    - GAE_SDK_ZIP_FILE_NAME=$GAE_SDK_FILE_NAME.zip
-    - GAE_SDK_URL=https://storage.googleapis.com/appengine-sdks/featured/$GAE_SDK_ZIP_FILE_NAME
-    - GAE_SDK_BATH=$PWD/$GAE_SDK_FILE_NAME
-    - PATH=$GAE_SDK_BATH:$PATH
-    - PYTHONPATH=$PYTHONPATH:$GAE_SDK_BATH
+    - GAE_SDK_ZIP_FILE=$google_appengine_$GAE_SDK_VERSION.zip
+    - GAE_SDK_URL=https://storage.googleapis.com/appengine-sdks/featured/$GAE_SDK_ZIP_FILE
+    - GAE_SDK_PATH=$PWD/google_appengine
+    - PATH=$GAE_SDK_PATH:$PATH
+    - PYTHONPATH=$PYTHONPATH:$GAE_SDK_PATH
 
 # From https://github.com/travis-ci/travis-ci/issues/738#issuecomment-214710901.
 before_script:
   - wget $GAE_SDK_URL -nv
-  - unzip -q $GAE_SDK_ZIP_FILE_NAME
+  - unzip -q $GAE_SDK_ZIP_FILE
 
 script: script/test -sv && codecov
 
