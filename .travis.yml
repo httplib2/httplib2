@@ -23,6 +23,7 @@ install: pip install $PIP_COMMON_PACKAGES_TO_INSTALL 'codecov>=2.0.15' -r requir
 
 env:
   global:
+    - PIP_COMMON_PACKAGES_TO_INSTALL='pip>=9.0 setuptools>=36.2 wheel>=0.30'
     - CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true
     - GAE_SDK_CHECK=https://appengine.google.com/api/updatecheck
     - GAE_SDK_VERSION=$(curl -s $GAE_SDK_CHECK | awk -F '\"' '/release/ {print $2}')
@@ -30,17 +31,13 @@ env:
     - GAE_SDK_ZIP_FILE_NAME=$GAE_SDK_FILE_NAME.zip
     - GAE_SDK_URL=https://storage.googleapis.com/appengine-sdks/featured/$GAE_SDK_ZIP_FILE_NAME
     - GAE_SDK_BATH=$PWD/$GAE_SDK_FILE_NAME
-    - PIP_COMMON_PACKAGES_TO_INSTALL='pip>=9.0 setuptools>=36.2 wheel>=0.30'
+    - PATH=$GAE_SDK_BATH:$PATH
+    - PYTHONPATH=$PYTHONPATH:$GAE_SDK_BATH
 
 # From https://github.com/travis-ci/travis-ci/issues/738#issuecomment-214710901.
 before_script:
   - wget $GAE_SDK_URL -nv
   - unzip -q GAE_SDK_FILE_NAME.zip
-
-env:
-  global:
-    - PATH=$GAE_SDK_BATH:$PATH
-    - PYTHONPATH=$PYTHONPATH:$GAE_SDK_BATH
 
 script: script/test -sv && codecov
 
