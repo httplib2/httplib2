@@ -25,22 +25,23 @@ install: pip install $PIP_COMMON_PACKAGES_TO_INSTALL 'codecov>=2.0.15' -r requir
 env:
   global:
     - PIP_COMMON_PACKAGES_TO_INSTALL='pip>=9.0 setuptools>=36.2 wheel>=0.30'
-    - CLOUDSDK_CORE_DISABLE_PROMPTS=true
-    - CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+    - CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=1
     - CLOUDSDK_SDK_INSTALLER=https://sdk.cloud.google.com
-    - CLOUDSDK_SDK_PATH=$PWD/google-cloud-sdk
+    - CLOUDSDK_SDK_PATH=$HOME/google-cloud-sdk
     - CLOUDSDK_SDK_BIN_PATH=$CLOUDSDK_SDK_PATH/bin
     - GAE_PYTHON_LIB_PATH=$CLOUDSDK_SDK_PATH/platform/google_appengine
     - PATH=$CLOUDSDK_SDK_BIN_PATH:$PATH
     - PYTHONPATH=$PYTHONPATH:$GAE_PYTHON_LIB_PATH
 
-script:
+before_script:
   # Based on https://stackoverflow.com/a/38776394.
-  - if [ ! -d "$CLOUDSDK_SDK_BIN_PATH" ]; then rm -rf $CLOUDSDK_SDK_PATH; curl $CLOUDSDK_SDK_INSTALLER | bash; fi
-  - source $CLOUDSDK_SDK_PATH/path.bash.inc
-  - gcloud components update
+  - curl $CLOUDSDK_SDK_INSTALLER | bash
   - gcloud components install app-engine-python
   - gcloud components install app-engine-python-extras
+  - gcloud components update
+
+script:
   - script/test -sv && codecov
 
 stages:
