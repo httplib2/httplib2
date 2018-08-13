@@ -1739,9 +1739,8 @@ a string that contains the response entity body.
                 authority = domain_port[0]
 
             conn_key = scheme + ":" + authority
-            if conn_key in self.connections:
-                conn = self.connections[conn_key]
-            else:
+            conn = self.connections.get(conn_key)
+            if conn is None:
                 if not connection_type:
                     connection_type = SCHEME_TO_CONNECTION[scheme]
                 certs = list(self.certificates.iter(authority))

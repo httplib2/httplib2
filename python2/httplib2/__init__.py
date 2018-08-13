@@ -1949,9 +1949,8 @@ class Http(object):
             proxy_info = self._get_proxy_info(scheme, authority)
 
             conn_key = scheme + ":" + authority
-            if conn_key in self.connections:
-                conn = self.connections[conn_key]
-            else:
+            conn = self.connections.get(conn_key)
+            if conn is None:
                 if not connection_type:
                     connection_type = SCHEME_TO_CONNECTION[scheme]
                 certs = list(self.certificates.iter(authority))
