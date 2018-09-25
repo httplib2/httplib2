@@ -160,8 +160,8 @@ HOP_BY_HOP = [
     "upgrade",
 ]
 
-# Default CA certificates file bundled with httplib2.
-CA_CERTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cacerts.txt")
+from httplib2 import certs
+CA_CERTS = certs.where()
 
 # PROTOCOL_TLS is python 3.5.3+. PROTOCOL_SSLv23 is deprecated.
 # Both PROTOCOL_TLS and PROTOCOL_SSLv23 are equivalent and means:
