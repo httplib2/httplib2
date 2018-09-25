@@ -3,7 +3,7 @@
 *.mo
 *.py[cod]
 *.so
-.cache
+.cache/
 .coverage
 .hg
 .installed.cfg

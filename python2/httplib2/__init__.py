@@ -1934,10 +1934,6 @@ class Http(object):
             uri = iri2uri(uri)
 
             (scheme, authority, request_uri, defrag_uri) = urlnorm(uri)
-            domain_port = authority.split(":")[0:2]
-            if len(domain_port) == 2 and domain_port[1] == "443" and scheme == "http":
-                scheme = "https"
-                authority = domain_port[0]
 
             proxy_info = self._get_proxy_info(scheme, authority)
 

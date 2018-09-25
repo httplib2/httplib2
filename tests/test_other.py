@@ -194,3 +194,15 @@ def test_connection_proxy_info_attribute_error(conn_type):
     with tests.assert_raises(socket.gaierror):
         with mock.patch("socket.socket.connect", side_effect=socket.gaierror):
             conn.request("GET", "/")
+
+
+def test_http_443_forced_https():
+    http = httplib2.Http()
+    http.force_exception_to_status_code = True
+    uri = "http://localhost:443/"
+    # sorry, using internal structure of Http to check chosen scheme
+    with mock.patch("httplib2.Http._request") as m:
+        http.request(uri)
+        assert len(m.call_args) > 0, "expected Http._request() call"
+        conn = m.call_args[0][0]
+        assert isinstance(conn, httplib2.HTTPConnectionWithTimeout)
