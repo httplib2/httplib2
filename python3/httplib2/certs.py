@@ -14,19 +14,30 @@ __history__ = """
 """
 
 import os
-import os.path
+
+
+def certifi_where():
+    return None
+
 
 try:
-    from certifi import where as get_cacerts
+    from certifi import where as certifi_where
 except ImportError:
-    def get_cacerts():
-        return os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "cacerts.txt")
+    pass
+
+BUILTIN_CA_CERTS = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "cacerts.txt"
+)
 
 
 def where():
-    return os.getenv('HTTPLIB2_CA_CERTS', get_cacerts())
+    env = os.environ.get("HTTPLIB2_CA_CERTS")
+    if env is not None:
+        return env
+    if certifi_where() is not None:
+        return certifi_where()
+    return BUILTIN_CA_CERTS
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(where())
