@@ -22,8 +22,7 @@ def custom_ca_certs_get():
 
 
 try:
-    import ca_certs_locater
-    custom_ca_certs_get = ca_certs_locater.get
+    from ca_certs_locater import get as custom_ca_certs_get
 except ImportError:
     pass
 
