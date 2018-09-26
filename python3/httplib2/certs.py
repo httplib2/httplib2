@@ -1,9 +1,9 @@
 """
 certs
 
-Returns the path to the ca bundle from ca_certs_locater if available, or
-from certifi, if available, or the environmental variable HTTPLIB2_CA_CERTS,
-if available, or the default CA certificates file bundled with httplib2.
+Returns the path to the ca bundle from the environmental variable
+HTTPLIB2_CA_CERTS, if available, or certifi, if available,
+or the default CA certificates file bundled with httplib2.
 
 Code originally from Requests library by Kenneth Reitz.
 
