@@ -2,8 +2,9 @@
 certs
 
 Returns the path to the ca bundle from the environmental variable
-HTTPLIB2_CA_CERTS, if available, or certifi, if available,
-or the default CA certificates file bundled with httplib2.
+HTTPLIB2_CA_CERTS, or from ca_certs_locater if available, or
+from certifi, if available, or the default CA certificates file
+bundled with httplib2.
 
 Code originally from Requests library by Kenneth Reitz.
 
@@ -14,6 +15,17 @@ __history__ = """
 """
 
 import os
+
+
+def custom_ca_certs_get():
+    return None
+
+
+try:
+    import ca_certs_locater
+    custom_ca_certs_get = ca_certs_locater.get
+except ImportError:
+    pass
 
 
 def certifi_where():
@@ -32,9 +44,11 @@ BUILTIN_CA_CERTS = os.path.join(
 
 def where():
     env = os.environ.get("HTTPLIB2_CA_CERTS")
-    if env is not None:
+    if env: # if not None and != ""
         return env
-    if certifi_where() is not None:
+    if custom_ca_certs_get():
+        return custom_ca_certs_get()
+    if certifi_where():
         return certifi_where()
     return BUILTIN_CA_CERTS
 

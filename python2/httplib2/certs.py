@@ -16,9 +16,14 @@ __history__ = """
 
 import os
 
-ca_certs_locater = None
+
+def custom_ca_certs_get():
+    return None
+
+
 try:
     import ca_certs_locater
+    custom_ca_certs_get = ca_certs_locater.get
 except ImportError:
     pass
 
@@ -39,11 +44,11 @@ BUILTIN_CA_CERTS = os.path.join(
 
 def where():
     env = os.environ.get("HTTPLIB2_CA_CERTS")
-    if env is not None:
+    if env: # if not None and != ""
         return env
-    if ca_certs_locater:
-        return ca_certs_locater.get()
-    if certifi_where() is not None:
+    if custom_ca_certs_get():
+        return custom_ca_certs_get()
+    if certifi_where():
         return certifi_where()
     return BUILTIN_CA_CERTS
 
