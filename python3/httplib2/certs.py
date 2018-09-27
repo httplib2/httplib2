@@ -17,24 +17,21 @@ __history__ = """
 import os
 
 
-def custom_ca_certs_get():
-    return None
-
-
-try:
-    from ca_certs_locater import get as custom_ca_certs_get
-except ImportError:
-    pass
-
-
-def certifi_where():
-    return None
-
-
+certifi_available = False
 try:
     from certifi import where as certifi_where
+    certifi_available = True
 except ImportError:
     pass
+
+
+custom_ca_locater_available = False
+try:
+    from ca_certs_locater import get as custom_ca_locater_where
+    custom_ca_locater_available = True
+except ImportError:
+    pass
+
 
 BUILTIN_CA_CERTS = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "cacerts.txt"
@@ -43,11 +40,11 @@ BUILTIN_CA_CERTS = os.path.join(
 
 def where():
     env = os.environ.get("HTTPLIB2_CA_CERTS")
-    if env: # if not None and != ""
+    if env:
         return env
-    if custom_ca_certs_get():
-        return custom_ca_certs_get()
-    if certifi_where():
+    if custom_ca_locater_available:
+        return custom_ca_locater_where()
+    if certifi_available:
         return certifi_where()
     return BUILTIN_CA_CERTS
 
