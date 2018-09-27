@@ -3,6 +3,7 @@
 *.mo
 *.py[cod]
 *.so
+.DS_Store
 .cache/
 .coverage
 .hg
