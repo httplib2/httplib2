@@ -1,6 +1,7 @@
 """Small, fast HTTP client library for Python.
 
-Features persistent connections, cache, and Google App Engine support.
+Features persistent connections, cache, and Google App Engine Standard
+Environment support.
 """
 
 from __future__ import print_function
