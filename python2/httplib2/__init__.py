@@ -1452,6 +1452,7 @@ SCHEME_TO_CONNECTION = {
 
 
 def _new_fixed_fetch(validate_certificate):
+
     def fixed_fetch(
         url,
         payload=None,
@@ -1461,8 +1462,6 @@ def _new_fixed_fetch(validate_certificate):
         follow_redirects=True,
         deadline=None,
     ):
-        if deadline is None:
-            deadline = socket.getdefaulttimeout()
         return fetch(
             url,
             payload=payload,
@@ -1535,30 +1534,28 @@ class AppEngineHttpsConnection(httplib.HTTPSConnection):
         self._fetch = _new_fixed_fetch(not disable_ssl_certificate_validation)
 
 
-# Use a different connection object for Google App Engine
+# Use a different connection object for Google App Engine Standard Environment.
+def is_gae_instance():
+    server_software = os.environ.get('SERVER_SOFTWARE', '')
+    if (server_software.startswith('Google App Engine/') or
+        server_software.startswith('Development/') or
+        server_software.startswith('testutil/')):
+        return True
+    return False
+
+
 try:
-    server_software = os.environ.get("SERVER_SOFTWARE")
-    if not server_software:
-        raise NotRunningAppEngineEnvironment()
-    elif not (
-        server_software.startswith("Google App Engine/")
-        or server_software.startswith("Development/")
-    ):
+    if not is_gae_instance():
         raise NotRunningAppEngineEnvironment()
 
-    from google.appengine.api import apiproxy_stub_map
-
-    if apiproxy_stub_map.apiproxy.GetStub("urlfetch") is None:
-        raise ImportError  # Bail out; we're not actually running on App Engine.
     from google.appengine.api.urlfetch import fetch
-    from google.appengine.api.urlfetch import InvalidURLError
 
     # Update the connection classes to use the Googel App Engine specific ones.
     SCHEME_TO_CONNECTION = {
         "http": AppEngineHttpConnection,
         "https": AppEngineHttpsConnection,
     }
-except (ImportError, AttributeError, NotRunningAppEngineEnvironment):
+except (ImportError, NotRunningAppEngineEnvironment):
     pass
 
 
