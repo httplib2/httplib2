@@ -1549,10 +1549,10 @@ try:
         raise NotRunningAppEngineEnvironment()
 
     from google.appengine.api import apiproxy_stub_map
-    from google.appengine.api.urlfetch import fetch
-
     if apiproxy_stub_map.apiproxy.GetStub("urlfetch") is None:
         raise ImportError
+
+    from google.appengine.api.urlfetch import fetch
 
     # Update the connection classes to use the Googel App Engine specific ones.
     SCHEME_TO_CONNECTION = {
