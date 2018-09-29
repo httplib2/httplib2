@@ -10,7 +10,6 @@ try:
 except ImportError:
     pass
 
-
 custom_ca_locater_available = False
 custom_ca_locater_where = None
 try:
