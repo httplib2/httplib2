@@ -7,7 +7,6 @@ certifi_available = False
 certifi_where = None
 try:
     from certifi import where as certifi_where
-
     certifi_available = True
 except ImportError:
     pass
