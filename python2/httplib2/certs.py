@@ -2,7 +2,6 @@
 
 import os
 
-
 certifi_available = False
 certifi_where = None
 try:
