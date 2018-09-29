@@ -2,22 +2,18 @@
 
 import os
 
-
 certifi_available = False
 certifi_where = None
 try:
     from certifi import where as certifi_where
-
     certifi_available = True
 except ImportError:
     pass
-
 
 custom_ca_locater_available = False
 custom_ca_locater_where = None
 try:
     from ca_certs_locater import get as custom_ca_locater_where
-
     custom_ca_locater_available = True
 except ImportError:
     pass
