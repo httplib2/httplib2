@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Small, fast HTTP client library for Python."""
 
 __author__ = "Joe Gregorio (joe@bitworking.org)"
@@ -160,8 +161,8 @@ HOP_BY_HOP = [
     "upgrade",
 ]
 
-# Default CA certificates file bundled with httplib2.
-CA_CERTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cacerts.txt")
+from httplib2 import certs
+CA_CERTS = certs.where()
 
 # PROTOCOL_TLS is python 3.5.3+. PROTOCOL_SSLv23 is deprecated.
 # Both PROTOCOL_TLS and PROTOCOL_SSLv23 are equivalent and means:
@@ -1735,15 +1736,10 @@ a string that contains the response entity body.
             uri = iri2uri(uri)
 
             (scheme, authority, request_uri, defrag_uri) = urlnorm(uri)
-            domain_port = authority.split(":")[0:2]
-            if len(domain_port) == 2 and domain_port[1] == "443" and scheme == "http":
-                scheme = "https"
-                authority = domain_port[0]
 
             conn_key = scheme + ":" + authority
-            if conn_key in self.connections:
-                conn = self.connections[conn_key]
-            else:
+            conn = self.connections.get(conn_key)
+            if conn is None:
                 if not connection_type:
                     connection_type = SCHEME_TO_CONNECTION[scheme]
                 certs = list(self.certificates.iter(authority))

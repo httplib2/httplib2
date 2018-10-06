@@ -14,6 +14,7 @@ import os
 import pytest
 import socket
 import tests
+from six.moves import urllib
 
 
 def _raise_name_not_known_error(*args, **kwargs):
@@ -111,3 +112,37 @@ def test_server_not_found_error_is_raised_for_invalid_hostname(mock_socket_conne
     )
     with tests.assert_raises(httplib2.ServerNotFoundError):
         http.request("http://invalid.hostname.foo.bar/", "GET")
+
+
+def test_auth_str_bytes():
+    # https://github.com/httplib2/httplib2/pull/115
+    # Proxy-Authorization b64encode() TypeError: a bytes-like object is required, not 'str'
+    with tests.server_const_http(request_count=2) as uri:
+        uri_parsed = urllib.parse.urlparse(uri)
+        http = httplib2.Http(
+            proxy_info=httplib2.ProxyInfo(
+                httplib2.socks.PROXY_TYPE_HTTP,
+                proxy_host=uri_parsed.hostname,
+                proxy_port=uri_parsed.port,
+                proxy_rdns=True,
+                proxy_user=u"user_str",
+                proxy_pass=u"pass_str",
+            )
+        )
+        response, _ = http.request(uri, "GET")
+        assert response.status == 200
+
+    with tests.server_const_http(request_count=2) as uri:
+        uri_parsed = urllib.parse.urlparse(uri)
+        http = httplib2.Http(
+            proxy_info=httplib2.ProxyInfo(
+                httplib2.socks.PROXY_TYPE_HTTP,
+                proxy_host=uri_parsed.hostname,
+                proxy_port=uri_parsed.port,
+                proxy_rdns=True,
+                proxy_user=b"user_bytes",
+                proxy_pass=b"pass_bytes",
+            )
+        )
+        response, _ = http.request(uri, "GET")
+        assert response.status == 200

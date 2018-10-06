@@ -3,7 +3,8 @@
 *.mo
 *.py[cod]
 *.so
-.cache
+.DS_Store
+.cache/
 .coverage
 .hg
 .installed.cfg
