@@ -110,8 +110,8 @@ def test_timeout_individual():
 
 def test_timeout_subsequent():
     class Handler(object):
-        number=0
-        
+        number = 0
+
         @classmethod
         def handle(cls, request):
             # request.number is always 1 because of
@@ -121,10 +121,10 @@ def test_timeout_subsequent():
                 time.sleep(0.6)
                 return tests.http_response_bytes(status=500)
             return tests.http_response_bytes(status=200)
-    
+
     http = httplib2.Http(timeout=0.5)
     http.force_exception_to_status_code = True
-    
+
     with tests.server_request(Handler.handle, request_count=2) as uri:
         response, _ = http.request(uri)
         assert response.status == 408
@@ -132,8 +132,8 @@ def test_timeout_subsequent():
 
         response, _ = http.request(uri)
         assert response.status == 200
-        
-        
+
+
 def test_timeout_https():
     c = httplib2.HTTPSConnectionWithTimeout("localhost", 80, timeout=47)
     assert 47 == c.timeout
