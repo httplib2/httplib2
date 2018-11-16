@@ -1,3 +1,22 @@
+0.12.0
+
+  Drop support for Python 3.3
+
+  ca_certs from environment HTTPLIB2_CA_CERTS or certifi
+  https://github.com/httplib2/httplib2/pull/117
+
+  PROXY_TYPE_HTTP with non-empty user/pass raised TypeError: bytes required
+  https://github.com/httplib2/httplib2/pull/115
+
+  Revert http:443->https workaround
+  https://github.com/httplib2/httplib2/issues/112
+
+  eliminate connection pool read race
+  https://github.com/httplib2/httplib2/pull/110
+
+  cache: stronger safename
+  https://github.com/httplib2/httplib2/pull/101
+
 0.11.3
 
   No changes, just reupload of 0.11.2 after fixing automatic release conditions in Travis.
