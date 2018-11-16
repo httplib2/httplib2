@@ -2135,8 +2135,8 @@ class Http(object):
                         cachekey,
                     )
         except Exception as e:
-            isTimeout = isinstance(e, socket.timeout)
-            if isTimeout:
+            is_timeout = isinstance(e, socket.timeout)
+            if is_timeout:
                 conn = self.connections.pop(conn_key, None)
                 if conn:
                     conn.close()
@@ -2147,7 +2147,7 @@ class Http(object):
                     content = e.content
                     response.status = 500
                     response.reason = str(e)
-                elif isTimeout:
+                elif is_timeout:
                     content = "Request Timeout"
                     response = Response(
                         {
