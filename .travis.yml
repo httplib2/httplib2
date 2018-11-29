@@ -1,4 +1,5 @@
 language: python
+dist: xenial
 
 cache:
   apt: true
@@ -15,13 +16,10 @@ python:
   - 3.4
   - 3.5
   - 3.6
+  - 3.7
   - pypy
 matrix:
   fast_finish: true
-  include:
-    - python: "3.7"
-      dist: xenial
-
 install: pip install $pip_install_common 'codecov>=2.0.15' -r requirements-test.txt
 script: script/test -sv && codecov
 
