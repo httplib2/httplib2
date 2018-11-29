@@ -17,7 +17,7 @@ python:
   - 3.5
   - 3.6
   - 3.7
-  - pypy
+  - pypy2.7-5.10.0
 matrix:
   fast_finish: true
 install: pip install $pip_install_common 'codecov>=2.0.15' -r requirements-test.txt
