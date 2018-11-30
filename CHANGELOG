@@ -1,6 +1,8 @@
-0.12.0
+0.12.1
 
   Add support for Python 3.7
+
+0.12.0
 
   Drop support for Python 3.3
 

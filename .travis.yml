@@ -27,7 +27,6 @@ stages:
   - release
 jobs:
   include:
-  include:
     - stage: test
       python: pypy
       dist: trusty
