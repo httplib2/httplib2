@@ -1,6 +1,11 @@
 0.12.1
 
-  Add support for Python 3.7
+  Catch socket timeouts and clear dead connection
+  https://github.com/httplib2/httplib2/issues/18
+  https://github.com/httplib2/httplib2/pull/111
+
+  Officially support Python 3.7 (package metadata)
+  https://github.com/httplib2/httplib2/issues/123
 
 0.12.0
 
