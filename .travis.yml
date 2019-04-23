@@ -39,7 +39,7 @@ jobs:
       script: test_group=pep8 script/test
     - stage: test
       env: _=py3-pep8
-      python: 3.6
+      python: 3.7
       install: pip install -r requirements-test.txt
       script: test_group=pep8 script/test
     - stage: test
@@ -49,13 +49,13 @@ jobs:
       script: test_group=package script/test
     - stage: test
       env: _=py3-package
-      python: 3.6
+      python: 3.7
       install: pip install $pip_install_common
       script: test_group=package script/test
     - stage: release
       if: (branch = master)
       env: _=pypi-upload-test
-      python: 3.6
+      python: 3.7
       install: pip install $pip_install_common
       script: script/release -auto
       deploy:
@@ -73,7 +73,7 @@ jobs:
     - stage: release
       if: (tag IS present)
       env: _=pypi-upload-public
-      python: 3.6
+      python: 3.7
       install: pip install $pip_install_common
       script: script/release -auto
       deploy:

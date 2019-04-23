@@ -83,19 +83,19 @@ interactive() {
 		confirm "Continue still? [yN] " || exit 1
 	fi
 
-    echo "Building package" >&2
-    find . -name '*.pyc' -o -name '*.pyo' -o -name '*.orig' -delete
-    rm -rf python{2,3}/.cache
-    rm -rf build dist
-    # TODO: sdist bdist_wheel
-    # but wheels don't roll well with our 2/3 split code base
-    local venv=./venv-release
-    if [[ ! -d "$venv" ]] ; then
-        virtualenv $venv
-        $venv/bin/pip install -U pip setuptools wheel twine
-    fi
-    $venv/bin/python setup.py clean --all
-    $venv/bin/python setup.py sdist
+	echo "Building package" >&2
+	find . -name '*.pyc' -o -name '*.pyo' -o -name '*.orig' -delete
+	rm -rf python{2,3}/.cache
+	rm -rf build dist
+	# TODO: sdist bdist_wheel
+	# but wheels don't roll well with our 2/3 split code base
+	local venv=./venv-release
+	if [[ ! -d "$venv" ]] ; then
+			virtualenv $venv
+			$venv/bin/pip install -U pip setuptools wheel twine
+	fi
+	$venv/bin/python setup.py clean --all
+	$venv/bin/python setup.py sdist
 
 	if confirm "Upload to PyPI? Use in special situation, normally CI (Travis) will upload to PyPI. [yN] " ; then
 		$venv/bin/twine upload dist/* || exit 1
