@@ -97,19 +97,20 @@ def test_sni_hostname_validation():
     http = httplib2.Http()
     http.request("https://google.com/", method="GET")
 
-def testTlsMinVersionRestriction(self):
+def testTlsMinVersionRestriction():
     # Test that we can restrict TLS version ranges with Python 3.7+
     # Older versions should pass, 3.7 should fail since host doesn't offer 1.2
-    httplib2.MIN_TLS_VERSION = "TLSv1.2"
+    httplib2.MIN_TLS_VERSION = "TLSv1_2"
     http = httplib2.Http()
-    self.assertRaises(ssl.SSLError, http.request, "https://tls-v1-0.badssl.com:1010/", "GET")
+    with tests.assert_raises(ssl.SSLError):
+        http.request("https://tls-v1-0.badssl.com:1010/", "GET")
 
-def testTlsMaxVersionRestriction(self):
+def testTlsMaxVersionRestriction():
     # Test that we can restrict TLS version ranges with Python 3.7+
     # Older versions should pass without being restricted
     # mail.google.com should support 1.2 or 1.3 when not restricted
-    httplib2.MAX_TLS_VERSION = "TLSv1.1"
+    httplib2.MAX_TLS_VERSION = "TLSv1"
     http = httplib2.Http()
-    self.http.request("https://mail.google.com", method="GET")
-    _, tls_ver, _ = httpc.connections['https:mail.google.com'].sock.cipher()
-    self.assertEqual(tls_ver, "TLSv1.1")
+    http.request("https://mail.google.com", method="GET")
+    _, tls_ver, _ = http.connections['https:mail.google.com'].sock.cipher()
+    assert tls_ver == "TLSv1.0"
