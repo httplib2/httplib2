@@ -173,6 +173,10 @@ DEFAULT_TLS_VERSION = getattr(ssl, "PROTOCOL_TLS", None) or getattr(
     ssl, "PROTOCOL_SSLv23"
 )
 
+# SSLContext.maximum_version and SSLContext.minimum_version are python 3.7+.
+# source: https://docs.python.org/3/library/ssl.html#ssl.SSLContext.maximum_version
+MAX_TLS_VERSION = None
+MIN_TLS_VERSION = None
 
 def _build_ssl_context(
     disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None
@@ -184,6 +188,11 @@ def _build_ssl_context(
     context.verify_mode = (
         ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
     )
+
+    if MAX_TLS_VERSION is not None and hasattr(context, "maximum_version"):
+        context.maximum_version = getattr(ssl.TLSVersion, MAX_TLS_VERSION)
+    if MIN_TLS_VERSION is not None and hasattr(context, "minimum_version"):
+        context.minimum_version = getattr(ssl.TLSVersion, MIN_TLS_VERSION)
 
     # check_hostname requires python 3.4+
     # we will perform the equivalent in HTTPSConnectionWithTimeout.connect() by calling ssl.match_hostname
