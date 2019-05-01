@@ -109,8 +109,8 @@ def test_tls_max_version_restriction():
     # Test that we can restrict TLS version ranges with Python 3.7+
     # Older versions should pass without being restricted
     # mail.google.com should support 1.2 or 1.3 when not restricted
-    httplib2.MAX_TLS_VERSION = "TLSv1_1"
+    httplib2.MAX_TLS_VERSION = "TLSv1"
     http = httplib2.Http()
     http.request("https://mail.google.com", method="GET")
     _, tls_ver, _ = http.connections['https:mail.google.com'].sock.cipher()
-    assert tls_ver == "TLSv1.1"
+    assert tls_ver == "TLSv1/SSLv3"
