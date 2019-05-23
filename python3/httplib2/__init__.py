@@ -173,11 +173,6 @@ DEFAULT_TLS_VERSION = getattr(ssl, "PROTOCOL_TLS", None) or getattr(
     ssl, "PROTOCOL_SSLv23"
 )
 
-# SSLContext.maximum_version and SSLContext.minimum_version are python 3.7+.
-# source: https://docs.python.org/3/library/ssl.html#ssl.SSLContext.maximum_version
-MAX_TLS_VERSION = None
-MIN_TLS_VERSION = None
-
 def _build_ssl_context(
     disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None,
     maximum_version=None, minimum_version=None,
@@ -190,11 +185,8 @@ def _build_ssl_context(
         ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
     )
 
-    if MAX_TLS_VERSION is not None and hasattr(context, "maximum_version"):
-        context.maximum_version = getattr(ssl.TLSVersion, MAX_TLS_VERSION)
-    if MIN_TLS_VERSION is not None and hasattr(context, "minimum_version"):
-        context.minimum_version = getattr(ssl.TLSVersion, MIN_TLS_VERSION)
-
+    # SSLContext.maximum_version and SSLContext.minimum_version are python 3.7+.
+    # source: https://docs.python.org/3/library/ssl.html#ssl.SSLContext.maximum_version
     if maximum_version is not None and hasattr(context, "maximum_version"):
         context.maximum_version = getattr(ssl.TLSVersion, maximum_version)
     if minimum_version is not None and hasattr(context, "minimum_version"):
@@ -1427,6 +1419,9 @@ class Http(object):
 
         If disable_ssl_certificate_validation is true, SSL cert validation will
         not be performed.
+
+        tls_maximum_version / tls_minimum_version require Python 3.7+ /
+        OpenSSL 1.1.0g+. A value of "TLSv1_3" requires OpenSSL 1.1.1+.
 """
         self.proxy_info = proxy_info
         self.ca_certs = ca_certs
