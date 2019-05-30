@@ -97,9 +97,10 @@ def test_sni_hostname_validation():
     http = httplib2.Http()
     http.request("https://google.com/", method="GET")
 
+
 @pytest.mark.skipif(
-        os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-        reason="Python 2.7 doesn't support TLS min/max"
+    os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
+    reason="Python 2.7 doesn't support TLS min/max"
 )
 def test_min_tls_version():
     # skip on Python versions that don't support TLS min
@@ -111,9 +112,10 @@ def test_min_tls_version():
     with tests.assert_raises(ssl.SSLError):
         http.request("https://tls-v1-1.badssl.com:1011/")
 
+
 @pytest.mark.skipif(
-        os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-        reason="Python 2.7 doesn't support TLS min/max"
+    os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
+    reason="Python 2.7 doesn't support TLS min/max"
 )
 def test_max_tls_version():
     # skip on Python versions that don't support TLS max
