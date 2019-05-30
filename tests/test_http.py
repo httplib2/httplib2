@@ -10,6 +10,7 @@ import os
 import pytest
 from six.moves import http_client, urllib
 import socket
+import ssl
 import tests
 
 DUMMY_URL = "http://127.0.0.1:1"
@@ -645,3 +646,26 @@ content"""
         assert response.status == 200
         assert content == b"content"
         assert response["link"], "link1, link2"
+
+def test_set_min_tls_version():
+    # Test setting minimum TLS version
+    # We expect failure on Python < 3.7 or OpenSSL < 1.1
+    expect_success = hasattr(ssl.Context(), 'minimum_version')
+    try:
+      http = httplib2.Http(minimum_tls_version="TLSv1_2")
+      success = True
+    except RuntimeError:
+      success = False
+    assert expect_success == success
+
+def test_set_max_tls_version():
+    # Test setting maximum TLS version
+    # We expect failure on Python < 3.7 or OpenSSL < 1.1
+    expect_success = hasattr(ssl.Context(), 'maximum_version')
+    try:
+        http = httplib2.Http(maximum_version="TLSv1_2")
+        success = True
+    except RuntimeError:
+        success = False
+    assert expect_success == success
+

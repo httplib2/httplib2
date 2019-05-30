@@ -96,3 +96,24 @@ def test_sni_hostname_validation():
     # TODO: make explicit test server with SNI validation
     http = httplib2.Http()
     http.request("https://google.com/", method="GET")
+
+def test_min_tls_version():
+    # skip on Python versions that don't support TLS min
+    if not hasattr(ssl.Context(), 'minimum_version'):
+        return
+    # BadSSL server that supports max TLS 1.1,
+    # forcing 1.2 should always fail
+    http = httplib2.Http(min_version="TLSv1_2")
+    with tests.assert_raises(ssl.SSLError):
+        http.request("https://tls-v1-1.badssl.com:1011/")
+
+def test_max_tls_version():
+    # skip on Python versions that don't support TLS max
+    if not hasattr(ssl.Context(), 'maximum_version'):
+        return
+    # Google supports TLS 1.2+, confirm we can force down to 1.0
+    # this may break whenever Google disables TLSv1
+    http = httplib2.Http(max_version="TLSv1")
+    http.request("https://google.com")
+    _, tls_ver, _ = http.connections['https:google.com'].sock.cipher()
+    assert tls_ver == "TLSv1.0"

@@ -58,3 +58,11 @@ fi
 
 export LD_LIBRARY_PATH=$PYTHON_INSTALL/lib:$SSL_INSTALL/lib
 export PATH=$PYTHON_INSTALL/bin:$SSL_INSTALL/bin:$PATH
+echo "Python version:"
+python -V
+echo "OpenSSL version:"
+openssl version
+echo "Python compiled against OpenSSL version:"
+python -c "import ssl; print(ssl.OPENSSL_VERSION)"
+echo "pip version:"
+pip --version
