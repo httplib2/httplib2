@@ -8,20 +8,15 @@ if [ ! -f $CACHE_DIR/python/bin/python ]; then
   ORIGINAL_DIRECTORY=$(pwd)
   PYTHON_VERSION="3.7.3"
   OPENSSL_VERSION="1.1.1c"
-  echo "RUNNING: apt update..."
-  sudo apt-get -qq --yes update > /dev/null
-  echo "RUNNING: apt dist-upgrade..."
-  sudo apt-get -qq --yes dist-upgrade
-  echo "Installing build tools..."
-  sudo apt-get -qq --yes install build-essential
   echo "Installing deps for python3..."
   sudo cp -v /etc/apt/sources.list /tmp
   sudo chmod a+rwx /tmp/sources.list
   dist=$(lsb_release --codename --short)
   echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
   sudo cp -v /tmp/sources.list /etc/apt
-  sudo apt-get -qq --yes update > /dev/null
-  sudo apt-get -qq --yes build-dep python3 > /dev/null
+  sudo apt-get -qq --yes update
+  sudo apt-get -qq --yes install build-essential
+  sudo apt-get -qq --yes build-dep python3
 
   cpucount=$(nproc --all)
   cd $CACHE_DIR
@@ -39,7 +34,7 @@ if [ ! -f $CACHE_DIR/python/bin/python ]; then
   make -j$cpucount -s
   echo "Running make install for OpenSSL..."
   make install > /dev/null
-  LD_LIBRARY_PATH=$SSL_DIR/lib
+  LD_LIBRARY_PATH=$SSL_INSTALL/lib
   cd ..
 
   # Compile latest Python
