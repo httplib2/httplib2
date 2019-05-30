@@ -647,6 +647,10 @@ content"""
         assert content == b"content"
         assert response["link"], "link1, link2"
 
+@pytest.mark_skipif(
+        os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
+        reason="Python 2.7 doesn't support ssl.Context()"
+)
 def test_set_min_tls_version():
     # Test setting minimum TLS version
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
@@ -658,6 +662,10 @@ def test_set_min_tls_version():
       success = False
     assert expect_success == success
 
+@pytest.mark_skipif(
+        os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
+        reason="Python 2.7 doesn't support ssl.Context()"
+)
 def test_set_max_tls_version():
     # Test setting maximum TLS version
     # We expect failure on Python < 3.7 or OpenSSL < 1.1

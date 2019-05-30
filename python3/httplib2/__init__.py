@@ -192,7 +192,7 @@ def _build_ssl_context(
             context.maximum_version = getattr(ssl.TLSVersion, maximum_version)
         else:
             raise RuntimeError("setting tls_maximum_version requires Python 3.7 and OpenSSL 1.1 or newer")
-    if minimum_version is not None
+    if minimum_version is not None:
         if hasattr(context, "minimum_version"):
             context.minimum_version = getattr(ssl.TLSVersion, minimum_version)
         else:
