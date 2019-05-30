@@ -13,8 +13,9 @@ import socket
 import ssl
 import tests
 
-DUMMY_URL = "http://127.0.0.1:1"
 
+DUMMY_URL = "http://127.0.0.1:1"
+DUMMY_HTTPS_URL = "https://127.0.0.1:2"
 
 def _raise_connection_refused_exception(*args, **kwargs):
     raise socket.error(errno.ECONNREFUSED, "Connection refused.")
@@ -657,10 +658,11 @@ def test_set_min_tls_version():
     expect_success = hasattr(ssl.SSLContext(), 'minimum_version')
     try:
       http = httplib2.Http(tls_minimum_version="TLSv1_2")
-      success = True
+      http.request(DUMMY_HTTPS_URL)
     except RuntimeError:
-      success = False
-    assert expect_success == success
+      assert not expect_success
+    except socket.error:
+      assert expect_success
 
 @pytest.mark.skipif(
         os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
@@ -668,12 +670,13 @@ def test_set_min_tls_version():
 )
 def test_set_max_tls_version():
     # Test setting maximum TLS version
-    # We expect failure on Python < 3.7 or OpenSSL < 1.1
+    # We expect RuntimeError on Python < 3.7 or OpenSSL < 1.1
+    # We expect socket error otherwise
     expect_success = hasattr(ssl.SSLContext(), 'maximum_version')
     try:
         http = httplib2.Http(tls_maximum_version="TLSv1_2")
-        success = True
+        http.request(DUMMY_HTTPS_URL)
     except RuntimeError:
-        success = False
-    assert expect_success == success
-
+        assert not expect_success
+    except socket.error:
+        assert expect_success
