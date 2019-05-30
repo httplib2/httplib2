@@ -44,14 +44,18 @@ jobs:
       script: test_group=pep8 script/test
     - stage: test
       os: osx
+      osx_image: xcode10.2
+      addons:
+        homebrew:
+          packages:
+            - openssl
+            - python
       env: _=pyt3-pep8
-      python: 3.7.3
       install:
-              brew update;
-              brew upgrade openssl@1.1;
               export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib";
               export CFLAGS="-I/usr/local/opt/openssl@1.1/include"
               export PATH="/usr/local/opt/openssl@1.1/bin:$PATH";
+              python -V
               openssl version
               pip install -r requirements-test.txt
       script: test_group=pep8 script/test
