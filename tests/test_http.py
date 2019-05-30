@@ -649,14 +649,14 @@ content"""
 
 @pytest.mark.skipif(
         os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-        reason="Python 2.7 doesn't support ssl.Context()"
+        reason="Python 2.7 doesn't support TLS min/max"
 )
 def test_set_min_tls_version():
     # Test setting minimum TLS version
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
-    expect_success = hasattr(ssl.Context(), 'minimum_version')
+    expect_success = hasattr(ssl.SSLContext(), 'minimum_version')
     try:
-      http = httplib2.Http(minimum_tls_version="TLSv1_2")
+      http = httplib2.Http(tls_minimum_version="TLSv1_2")
       success = True
     except RuntimeError:
       success = False
@@ -664,14 +664,14 @@ def test_set_min_tls_version():
 
 @pytest.mark.skipif(
         os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-        reason="Python 2.7 doesn't support ssl.Context()"
+        reason="Python 2.7 doesn't support TLS min/max"
 )
 def test_set_max_tls_version():
     # Test setting maximum TLS version
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
-    expect_success = hasattr(ssl.Context(), 'maximum_version')
+    expect_success = hasattr(ssl.SSLContext(), 'maximum_version')
     try:
-        http = httplib2.Http(maximum_version="TLSv1_2")
+        http = httplib2.Http(tls_maximum_version="TLSv1_2")
         success = True
     except RuntimeError:
         success = False
