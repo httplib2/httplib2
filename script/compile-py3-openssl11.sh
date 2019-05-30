@@ -34,7 +34,7 @@ if [ ! -f $CACHE_DIR/python/bin/python ]; then
   make -j$cpucount -s
   echo "Running make install for OpenSSL..."
   make install > /dev/null
-  LD_LIBRARY_PATH=$SSL_INSTALL/lib
+  export LD_LIBRARY_PATH=$SSL_INSTALL/lib
   cd ..
 
   # Compile latest Python

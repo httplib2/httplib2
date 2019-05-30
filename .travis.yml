@@ -44,6 +44,7 @@ jobs:
       script: test_group=pep8 script/test
     - stage: test
       env: _-py37-openssl11
+      python: 3.7 # we'll use compiled version but makes Travis look correct
       install:
         - source script/compile-py3-openssl11.sh
         - pip install $pip_install_common 'codecov>=2.0.15' -r requirements-test.txt
