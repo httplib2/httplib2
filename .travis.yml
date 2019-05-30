@@ -43,6 +43,19 @@ jobs:
       install: pip install -r requirements-test.txt
       script: test_group=pep8 script/test
     - stage: test
+      os: osx
+      env: _=pyt3-pep8
+      python: 3.7
+      install:
+              brew update;
+              brew upgrade openssl@1.1;
+              export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib";
+              export CFLAGS="-I/usr/local/opt/openssl@1.1/include"
+              export PATH="/usr/local/opt/openssl@1.1/bin:$PATH";
+              openssl version
+              pip install -r requirements-test.txt
+      script: test_group=pep8 script/test
+    - stage: test
       env: _=py2-package
       python: 2.7
       install: pip install $pip_install_common
