@@ -11,9 +11,9 @@ if [ ! -f $CACHE_DIR/python/bin/python ]; then
   echo "RUNNING: apt update..."
   sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
-  sudo apt-get -qq --yes dist-upgrade > /dev/null
+  sudo apt-get -qq --yes dist-upgrade
   echo "Installing build tools..."
-  sudo apt-get -qq --yes install build-essential > /dev/null
+  sudo apt-get -qq --yes install build-essential
   echo "Installing deps for python3..."
   sudo cp -v /etc/apt/sources.list /tmp
   sudo chmod a+rwx /tmp/sources.list
@@ -39,7 +39,7 @@ if [ ! -f $CACHE_DIR/python/bin/python ]; then
   make -j$cpucount -s
   echo "Running make install for OpenSSL..."
   make install > /dev/null
-  export LD_LIBRARY_PATH=$SSL_DIR/lib
+  LD_LIBRARY_PATH=$SSL_DIR/lib
   cd ..
 
   # Compile latest Python
@@ -51,7 +51,7 @@ if [ ! -f $CACHE_DIR/python/bin/python ]; then
   cd Python-$PYTHON_VERSION
   echo "Compiling Python $PYTHON_VERSION..."
   # Note we are purposefully NOT using optimization flags as they increase compile time 10x
-  conf_flags="--with-openssl=$SSL_DIR --enable-shared --prefix=$PYTHON_INSTALL --with-ensurepip=upgrade"
+  conf_flags="--with-openssl=$SSL_INSTALL --enable-shared --prefix=$PYTHON_INSTALL --with-ensurepip=upgrade"
   ./configure $conf_flags > /dev/null
   make -j$cpucount -s
   echo "Installing Python..."
