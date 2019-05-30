@@ -2,7 +2,7 @@ CACHE_DIR=$HOME/.cache
 SSL_INSTALL=$CACHE_DIR/ssl
 PYTHON_INSTALL=$CACHE_DIR/python
 
-rm -rf $CACHE_DIR/* # temp blow away
+#rm -rf $CACHE_DIR/* # uncomment to rebuild
 
 if [ ! -f $CACHE_DIR/python/bin/python ]; then
   ORIGINAL_DIRECTORY=$(pwd)
