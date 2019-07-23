@@ -1136,7 +1136,7 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
             raise ProxiesUnavailableError(
                 "Proxy support missing but proxy use was requested!"
             )
-        if self.proxy_info and self.proxy_info.isgood():
+        if self.proxy_info and self.proxy_info.isgood() and self.proxy_info.applies_to(self.host):
             use_proxy = True
             proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers = (
                 self.proxy_info.astuple()
