@@ -1,3 +1,5 @@
+.PHONY: tests
+
 tests:
 	-cd python2 && python2.4 httplib2test.py
 	-cd python2 && python2.5 httplib2test.py
