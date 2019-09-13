@@ -999,6 +999,10 @@ class ProxyInfo(object):
           proxy_headers: Additional or modified headers for the proxy connect
           request.
         """
+        if isinstance(proxy_user, str):
+            proxy_user = proxy_user.encode()
+        if isinstance(proxy_pass, str):
+            proxy_pass = proxy_pass.encode()
         self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns, self.proxy_user, self.proxy_pass, self.proxy_headers = (
             proxy_type,
             proxy_host,

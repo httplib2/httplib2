@@ -269,7 +269,8 @@ def server_socket(fun, request_count=1, timeout=5):
         gcounter[0] += 1
         keep = True
         keep &= gcounter[0] < request_count
-        keep &= request.headers.get("connection", "").lower() != "close"
+        if request is not None:
+            keep &= request.headers.get("connection", "").lower() != "close"
         return keep
 
     def server_socket_thread(srv):
@@ -295,7 +296,7 @@ def server_socket(fun, request_count=1, timeout=5):
                 )
         except Exception as e:
             # traceback.print_exc caused IOError: concurrent operation on sys.stderr.close() under setup.py test
-            sys.stderr.write(traceback.format_exc().encode())
+            print(traceback.format_exc(), file=sys.stderr)
             gresult[0] = e
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

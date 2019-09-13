@@ -32,8 +32,8 @@ def test_from_url_ident():
     pi = httplib2.proxy_info_from_url("http://zoidberg:fish@someproxy:99")
     assert pi.proxy_host == "someproxy"
     assert pi.proxy_port == 99
-    assert pi.proxy_user == "zoidberg"
-    assert pi.proxy_pass == "fish"
+    assert pi.proxy_user == b"zoidberg"
+    assert pi.proxy_pass == b"fish"
 
 
 def test_from_env():
@@ -146,3 +146,28 @@ def test_auth_str_bytes():
         )
         response, _ = http.request(uri, "GET")
         assert response.status == 200
+
+
+def test_socks5_auth():
+    def proxy_conn(client, tick):
+        data = client.recv(64)
+        assert data == b"\x05\x02\x00\x02"
+        client.send(b"\x05\x02")  # select username/password auth
+        data = client.recv(64)
+        assert data == b"\x01\x08user_str\x08pass_str"
+        client.send(b"\x01\x01")  # deny
+        tick(None)
+
+    with tests.server_socket(proxy_conn) as uri:
+        uri_parsed = urllib.parse.urlparse(uri)
+        proxy_info = httplib2.ProxyInfo(
+            httplib2.socks.PROXY_TYPE_SOCKS5,
+            proxy_host=uri_parsed.hostname,
+            proxy_port=uri_parsed.port,
+            proxy_rdns=True,
+            proxy_user=u"user_str",
+            proxy_pass=u"pass_str",
+        )
+        http = httplib2.Http(proxy_info=proxy_info)
+        with tests.assert_raises(httplib2.socks.Socks5AuthError):
+            http.request(uri, "GET")

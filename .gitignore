@@ -12,6 +12,7 @@
 .project
 .pydevproject
 .pytest_cache/*
+.tags*
 .tox
 _httplib2_test_cache/*
 bin
