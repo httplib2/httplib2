@@ -1176,7 +1176,9 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
 
             host = self.host
             port = self.port
-
+        
+        socket_err = None
+        
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
@@ -1218,7 +1220,8 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
                     self.sock.connect((self.host, self.port) + sa[2:])
                 else:
                     self.sock.connect(sa)
-            except socket.error as msg:
+            except socket.error as e:
+                socket_err = e
                 if self.debuglevel > 0:
                     print("connect fail: (%s, %s)" % (self.host, self.port))
                     if use_proxy:
@@ -1241,7 +1244,7 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
                 continue
             break
         if not self.sock:
-            raise socket.error(msg)
+            raise socket_err if socket_err else socket.error(msg)
 
 
 class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
