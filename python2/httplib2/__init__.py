@@ -1244,7 +1244,7 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
                 continue
             break
         if not self.sock:
-            raise socket_err if socket_err else socket.error(msg)
+            raise socket_err or socket.error(msg)
 
 
 class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
