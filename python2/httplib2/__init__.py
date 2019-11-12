@@ -1162,7 +1162,6 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
             raise ProxiesUnavailableError(
                 "Proxy support missing but proxy use was requested!"
             )
-        msg = "getaddrinfo returns an empty list"
         if self.proxy_info and self.proxy_info.isgood():
             use_proxy = True
             proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers = (
@@ -1244,7 +1243,7 @@ class HTTPConnectionWithTimeout(httplib.HTTPConnection):
                 continue
             break
         if not self.sock:
-            raise socket_err or socket.error(msg)
+            raise socket_err or socket.error("getaddrinfo returns an empty list")
 
 
 class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
@@ -1341,7 +1340,6 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
     def connect(self):
         "Connect to a host on a given (SSL) port."
 
-        msg = "getaddrinfo returns an empty list"
         if self.proxy_info and self.proxy_info.isgood():
             use_proxy = True
             proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers = (
@@ -1355,7 +1353,9 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
 
             host = self.host
             port = self.port
-
+            
+        socket_err = None
+        
         address_info = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
         for family, socktype, proto, canonname, sockaddr in address_info:
             try:
@@ -1438,7 +1438,8 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                     raise
             except (socket.timeout, socket.gaierror):
                 raise
-            except socket.error as msg:
+            except socket.error as e:
+                socket_err = e
                 if self.debuglevel > 0:
                     print("connect fail: (%s, %s)" % (self.host, self.port))
                     if use_proxy:
@@ -1461,7 +1462,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                 continue
             break
         if not self.sock:
-            raise socket.error(msg)
+            raise socket_err or socket.error("getaddrinfo returns an empty list")
 
 
 SCHEME_TO_CONNECTION = {
