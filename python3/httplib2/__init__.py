@@ -78,6 +78,8 @@ debuglevel = 0
 # A request will be tried 'RETRIES' times if it fails at the socket/connection level.
 RETRIES = 2
 
+# socks.PROXY_TYPE_SOCKS4, socks.PROXY_TYPE_SOCKS5, socks.PROXY_TYPE_HTTP
+proxy_schemes = { 'socks4' : 1, 'socks5' : 2, 'http' : 3 }
 
 # All exceptions raised here derive from HttpLib2Error
 class HttpLib2Error(Exception):
@@ -1104,6 +1106,10 @@ def proxy_info_from_url(url, method="http", noproxy=None):
         port = dict(https=443, http=80)[method]
 
     proxy_type = 3  # socks.PROXY_TYPE_HTTP
+    if len(url.scheme) > 0:
+        _scheme_prefix = url.scheme.lower()
+        if _scheme_prefix in proxy_schemes:
+            proxy_type = proxy_schemes[_scheme_prefix]
     pi = ProxyInfo(
         proxy_type=proxy_type,
         proxy_host=host,
