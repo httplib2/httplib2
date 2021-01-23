@@ -63,6 +63,10 @@ A comprehensive HTTP client library, ``httplib2`` supports many features left ou
   and memcached based caches are supported.
 
 
+**Cookies**
+  Handles cookies both in request and response. Automatically manages the cookies expiration, follows the cookies domain and path matching policy.
+
+
 **All Methods**
   The module can handle any HTTP request method, not just GET and POST.
 

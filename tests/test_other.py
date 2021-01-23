@@ -47,7 +47,7 @@ def test_pickle_http():
     assert new_http.certificates.credentials == http.certificates.credentials
     assert new_http.cache.cache == http.cache.cache
     for key in new_http.__dict__:
-        if key not in ("cache", "certificates", "credentials"):
+        if key not in ("cache", "certificates", "credentials", "cookie_jar"):
             assert getattr(new_http, key) == getattr(http, key)
 
 

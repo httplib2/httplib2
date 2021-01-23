@@ -50,6 +50,7 @@ except ImportError:
     # idea is to have soft-dependency on any compatible module called socks
     from . import socks
 from .iri2uri import iri2uri
+from .cookie import CookieJar, NullCookieJar
 
 
 def has_timeout(timeout):
@@ -1408,6 +1409,7 @@ class Http(object):
     - Basic
     - Digest
     - WSSE
+    - Cookies
 
     and more.
     """
@@ -1421,6 +1423,7 @@ class Http(object):
         disable_ssl_certificate_validation=False,
         tls_maximum_version=None,
         tls_minimum_version=None,
+        cookie_jar=None,
     ):
         """If 'cache' is a string then it is used as a directory name for
         a disk cache. Otherwise it must be an object that supports the
@@ -1447,7 +1450,12 @@ class Http(object):
 
         tls_maximum_version / tls_minimum_version require Python 3.7+ /
         OpenSSL 1.1.0g+. A value of "TLSv1_3" requires OpenSSL 1.1.1+.
-"""
+
+        cookie_jar is an object compatible with httplib2.CookieJar. It will
+        enable the cookie manager which extracts the cookies from the HTTP
+        response and sets policy matched cookies into the subsequent requests
+        automatically.
+        """
         self.proxy_info = proxy_info
         self.ca_certs = ca_certs
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
@@ -1495,6 +1503,8 @@ class Http(object):
         # Keep Authorization: headers on a redirect.
         self.forward_authorization_headers = False
 
+        self.cookie_jar = cookie_jar or NullCookieJar()
+
     def close(self):
         """Close persistent connections, clear sensitive data.
         Not thread-safe, requires external synchronization against concurrent requests.
@@ -1502,6 +1512,9 @@ class Http(object):
         existing, self.connections = self.connections, {}
         for _, c in existing.items():
             c.close()
+
+        self.cookie_jar.clear()
+
         self.certificates.clear()
         self.clear_credentials()
 
@@ -1546,6 +1559,19 @@ class Http(object):
         that are used for authentication"""
         self.credentials.clear()
         self.authorizations = []
+
+    def _set_cookie_header(self, headers, host, uri, is_https, cookies):
+        # Add one-time cookies provided by request parameter
+        cookie_list = ['{0}={1}'.format(n, v) for n, v in cookies.items()] \
+            if cookies else []
+
+        # Add the cookies matched in cookie jar
+        cookie_header = self.cookie_jar.get_header(host, uri, is_https)
+        if cookie_header:
+            cookie_list.append(cookie_header)
+
+        if cookie_list:
+            headers['cookie'] = '; '.join(cookie_list)
 
     def _conn_request(self, conn, request_uri, method, body, headers):
         i = 0
@@ -1621,6 +1647,10 @@ class Http(object):
                     content = _decompressContent(response, content)
 
             break
+
+        self.cookie_jar.extract_header(
+            conn.host, request_uri, response.get('set-cookie'))
+
         return (response, content)
 
     def _request(
@@ -1757,26 +1787,33 @@ class Http(object):
         headers=None,
         redirections=DEFAULT_MAX_REDIRECTS,
         connection_type=None,
+        cookies=None,
     ):
         """ Performs a single HTTP request.
-The 'uri' is the URI of the HTTP resource and can begin
-with either 'http' or 'https'. The value of 'uri' must be an absolute URI.
+        The 'uri' is the URI of the HTTP resource and can begin
+        with either 'http' or 'https'. The value of 'uri' must be an absolute URI.
 
-The 'method' is the HTTP method to perform, such as GET, POST, DELETE, etc.
-There is no restriction on the methods allowed.
+        The 'method' is the HTTP method to perform, such as GET, POST, DELETE, etc.
+        There is no restriction on the methods allowed.
 
-The 'body' is the entity body to be sent with the request. It is a string
-object.
+        The 'body' is the entity body to be sent with the request. It is a string
+        object.
 
-Any extra headers that are to be sent with the request should be provided in the
-'headers' dictionary.
+        Any extra headers that are to be sent with the request should be provided in the
+        'headers' dictionary.
 
-The maximum number of redirect to follow before raising an
-exception is 'redirections. The default is 5.
+        The maximum number of redirect to follow before raising an
+        exception is 'redirections. The default is 5.
 
-The return value is a tuple of (response, content), the first
-being and instance of the 'Response' class, the second being
-a string that contains the response entity body.
+        The 'cookies' is a one time cookie list which is valid in this request
+        only. It's a dict of {<name>: <value>}. These cookies will be sent out
+        in the request even the cookie manager is not enabled. If the cookie
+        manager is enabled, these cookies will be sent out with the cookies
+        from cookie jar, but will never be stored into cookie jar.
+
+        The return value is a tuple of (response, content), the first
+        being and instance of the 'Response' class, the second being
+        a string that contains the response entity body.
         """
         conn_key = ''
 
@@ -1834,6 +1871,8 @@ a string that contains the response entity body.
 
             if "range" not in headers and "accept-encoding" not in headers:
                 headers["accept-encoding"] = "gzip, deflate"
+
+            self._set_cookie_header(headers, conn.host, request_uri, scheme == 'https', cookies)
 
             info = email.message.Message()
             cachekey = None
@@ -2076,5 +2115,13 @@ class Response(dict):
     def __getattr__(self, name):
         if name == "dict":
             return self
+        elif name == "cookies":
+            # Provide a way to access the cookie info of this reponse
+            if 'set-cookie' not in self:
+                cookies = {}
+            else:
+                cookies = {ck['name']: ck['value'] for ck in CookieJar.parse_iter(self['set-cookie'])}
+            setattr(self, name, cookies)
+            return cookies
         else:
             raise AttributeError(name)

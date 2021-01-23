@@ -447,6 +447,13 @@ def http_response_bytes(
     undefined_body_length=False,
     **kwargs
 ):
+    """
+    headers:
+        A dict to store the HTTP response headers. The header value should be a
+        string. But HTTP also allows multiple headers to share the same name,
+        in that case, the header value should be a string list.
+    """
+
     if undefined_body_length:
         add_content_length = False
     if headers is None:
@@ -457,7 +464,16 @@ def http_response_bytes(
         headers.setdefault("date", email.utils.formatdate())
     if add_etag:
         headers.setdefault("etag", '"{0}"'.format(hashlib.md5(body).hexdigest()))
-    header_string = "".join("{0}: {1}\r\n".format(k, v) for k, v in headers.items())
+
+    header_list = []
+    for key, val in headers.items():
+        if isinstance(val, (list, tuple)):
+            for v in val:
+                header_list.append((key, v))
+        else:
+            header_list.append((key, val))
+    header_string = "".join("{0}: {1}\r\n".format(k, v) for k, v in header_list)
+
     if (
         not undefined_body_length
         and proto != "HTTP/1.0"
@@ -770,3 +786,36 @@ def ssl_context(protocol=None):
     if sys.version_info < (3, 5, 3):
         return ssl.SSLContext(ssl.PROTOCOL_SSLv23)
     return ssl.SSLContext()
+
+
+def http_reflect_with_cookies(cookie_route=None, response_headers=None, out_requests=None):
+    """Server with cookies handling.
+
+    :param cookie_route:
+        A dict in format {<path>: <cookie-header>} will trigger the server to
+        send back "set-cookie" headers by different paths.
+        Note that the cookie-header also can be a list to allow multiple cookie
+        headers.
+
+    If path is not in the cookie_route, return 200 and reflect cookie in the
+    body.
+    """
+    cookie_route = cookie_route or {}
+    response_headers = response_headers or {}
+
+    @store_request_response(out_requests)
+    def http_reflect_with_cookie_handler(request):
+        headers = response_headers.copy()
+        if request.uri in cookie_route:
+            headers['set-cookie'] = cookie_route.get(request.uri)
+            return http_response_bytes(
+                status=200, headers=headers, body=b"set-cookie header sent")
+        else:
+            cookie_header = request.headers.get("cookie", "")
+            if not cookie_header:
+                return http_response_bytes(
+                    status=400, headers=headers, body=b"cookie required")
+            return http_response_bytes(
+                status=200, headers=headers, body=cookie_header.encode())
+
+    return http_reflect_with_cookie_handler

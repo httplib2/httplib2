@@ -62,6 +62,8 @@ except ImportError:
     except (ImportError, AttributeError):
         socks = None
 
+from cookie import CookieJar, NullCookieJar
+
 # Build the appropriate socket wrapper for ssl
 ssl = None
 ssl_SSLError = None
@@ -1603,6 +1605,7 @@ class Http(object):
     - Basic
     - Digest
     - WSSE
+    - Cookies
 
     and more.
     """
@@ -1615,6 +1618,7 @@ class Http(object):
         ca_certs=None,
         disable_ssl_certificate_validation=False,
         ssl_version=None,
+        cookie_jar=None,
     ):
         """If 'cache' is a string then it is used as a directory name for
         a disk cache. Otherwise it must be an object that supports the
@@ -1640,6 +1644,11 @@ class Http(object):
         not be performed.
 
         By default, ssl.PROTOCOL_SSLv23 will be used for the ssl version.
+
+        cookie_jar is an object compatible with httplib2.CookieJar. It will
+        enable the cookie manager which extracts the cookies from the HTTP
+        response and sets policy matched cookies into the subsequent requests
+        automatically.
         """
         self.proxy_info = proxy_info
         self.ca_certs = ca_certs
@@ -1688,6 +1697,8 @@ class Http(object):
         # Keep Authorization: headers on a redirect.
         self.forward_authorization_headers = False
 
+        self.cookie_jar = cookie_jar or NullCookieJar()
+
     def close(self):
         """Close persistent connections, clear sensitive data.
         Not thread-safe, requires external synchronization against concurrent requests.
@@ -1695,6 +1706,9 @@ class Http(object):
         existing, self.connections = self.connections, {}
         for _, c in existing.iteritems():
             c.close()
+
+        self.cookie_jar.clear()
+
         self.certificates.clear()
         self.clear_credentials()
 
@@ -1739,6 +1753,19 @@ class Http(object):
         that are used for authentication"""
         self.credentials.clear()
         self.authorizations = []
+
+    def _set_cookie_header(self, headers, host, uri, is_https, cookies):
+        # Add one-time cookies provided by request parameter
+        cookie_list = ['{0}={1}'.format(n, v) for n, v in cookies.iteritems()] \
+            if cookies else []
+
+        # Add the cookies matched in cookie jar
+        cookie_header = self.cookie_jar.get_header(host, uri, is_https)
+        if cookie_header:
+            cookie_list.append(cookie_header)
+
+        if cookie_list:
+            headers['cookie'] = '; '.join(cookie_list)
 
     def _conn_request(self, conn, request_uri, method, body, headers):
         i = 0
@@ -1815,6 +1842,10 @@ class Http(object):
                 if method != "HEAD":
                     content = _decompressContent(response, content)
             break
+
+        self.cookie_jar.extract_header(
+            conn.host, request_uri, response.get('set-cookie'))
+
         return (response, content)
 
     def _request(
@@ -1951,6 +1982,7 @@ class Http(object):
         headers=None,
         redirections=DEFAULT_MAX_REDIRECTS,
         connection_type=None,
+        cookies=None,
     ):
         """ Performs a single HTTP request.
 
@@ -1968,6 +2000,12 @@ class Http(object):
 
         The maximum number of redirect to follow before raising an
         exception is 'redirections. The default is 5.
+
+        The 'cookies' is a one time cookie list which is valid in this request
+        only. It's a dict of {<name>: <value>}. These cookies will be sent out
+        in the request even the cookie manager is not enabled. If the cookie
+        manager is enabled, these cookies will be sent out with the cookies
+        from cookie jar, but will never be stored into cookie jar.
 
         The return value is a tuple of (response, content), the first
         being and instance of the 'Response' class, the second being
@@ -2029,6 +2067,8 @@ class Http(object):
 
             if "range" not in headers and "accept-encoding" not in headers:
                 headers["accept-encoding"] = "gzip, deflate"
+
+            self._set_cookie_header(headers, conn.host, request_uri, scheme == 'https', cookies)
 
             info = email.Message.Message()
             cachekey = None
@@ -2284,5 +2324,13 @@ class Response(dict):
     def __getattr__(self, name):
         if name == "dict":
             return self
+        elif name == "cookies":
+            # Provide a way to access the cookie info of this reponse
+            if 'set-cookie' not in self:
+                cookies = {}
+            else:
+                cookies = {ck['name']: ck['value'] for ck in CookieJar.parse_iter(self['set-cookie'])}
+            setattr(self, name, cookies)
+            return cookies
         else:
             raise AttributeError(name)
