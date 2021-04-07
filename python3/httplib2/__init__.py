@@ -163,7 +163,6 @@ def _build_ssl_context(
             context.minimum_version = minimum_version
         else:
             raise RuntimeError("setting tls_minimum_version requires Python 3.7 and OpenSSL 1.1 or newer")
-            
     # check_hostname requires python 3.4+
     # we will perform the equivalent in HTTPSConnectionWithTimeout.connect() by calling ssl.match_hostname
     # if check_hostname is not supported.
