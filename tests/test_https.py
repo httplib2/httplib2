@@ -81,24 +81,7 @@ def test_set_min_tls_version(version):
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
     expect_success = hasattr(ssl.SSLContext(), 'minimum_version')
     try:
-        http = httplib2.Http(tls_minimum_version="TLSv1_2")
-        http.request(tests.DUMMY_HTTPS_URL)
-    except RuntimeError:
-        assert not expect_success
-    except socket.error:
-        assert expect_success
-
-
-@pytest.mark.skipif(
-    not hasattr(tests.ssl_context(), "minimum_version"),
-    reason="ssl doesn't support TLS min/max",
-)
-def test_set_min_tls_version_enum():
-    # Test setting minimum TLS version
-    # We expect failure on Python < 3.7 or OpenSSL < 1.1
-    expect_success = hasattr(ssl.SSLContext(), 'minimum_version')
-    try:
-        http = httplib2.Http(tls_minimum_version=ssl.TLSVersion.TLSv1_2)
+        http = httplib2.Http(tls_minimum_version=version)
         http.request(tests.DUMMY_HTTPS_URL)
     except RuntimeError:
         assert not expect_success
@@ -110,31 +93,14 @@ def test_set_min_tls_version_enum():
     not hasattr(tests.ssl_context(), "maximum_version"),
     reason="ssl doesn't support TLS min/max",
 )
-def test_set_max_tls_version_str():
+@pytest.mark.parametrize("version", (None, ssl.TLSVersion.TLSv1_2, "TLSv1_2"))
+def test_set_max_tls_version(version):
     # Test setting maximum TLS version
     # We expect RuntimeError on Python < 3.7 or OpenSSL < 1.1
     # We expect socket error otherwise
     expect_success = hasattr(ssl.SSLContext(), 'maximum_version')
     try:
-        http = httplib2.Http(tls_maximum_version="TLSv1_2")
-        http.request(tests.DUMMY_HTTPS_URL)
-    except RuntimeError:
-        assert not expect_success
-    except socket.error:
-        assert expect_success
-
-
-@pytest.mark.skipif(
-    not hasattr(tests.ssl_context(), "maximum_version"),
-    reason="ssl doesn't support TLS min/max",
-)
-def test_set_max_tls_version_enum():
-    # Test setting maximum TLS version
-    # We expect RuntimeError on Python < 3.7 or OpenSSL < 1.1
-    # We expect socket error otherwise
-    expect_success = hasattr(ssl.SSLContext(), 'maximum_version')
-    try:
-        http = httplib2.Http(tls_maximum_version=ssl.TLSVersion.TLSv1_2)
+        http = httplib2.Http(tls_maximum_version=version)
         http.request(tests.DUMMY_HTTPS_URL)
     except RuntimeError:
         assert not expect_success
