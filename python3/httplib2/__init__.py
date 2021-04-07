@@ -160,7 +160,7 @@ def _build_ssl_context(
         if hasattr(context, "minimum_version"):
             if isinstance(minimum_version, str):
                 minimum_version = getattr(ssl.TLSVersion, minimum_version)
-            context.maximum_version = minimum_version
+            context.minimum_version = minimum_version
         else:
             raise RuntimeError("setting tls_minimum_version requires Python 3.7 and OpenSSL 1.1 or newer")
             
