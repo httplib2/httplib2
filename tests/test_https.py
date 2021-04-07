@@ -71,11 +71,19 @@ def test_not_trusted_ca():
             pass
 
 
+def get_testable_tls_versions():
+    if sys.version_info < (3, 7, 0) \
+            or not hasattr(ssl_context(), "minimum_version") \
+            or not hasattr(ssl_context(), "maximum_version"):
+        return ()
+    return (None, "TLSv1_2", ssl.TLSVersion.TLSv1_2)
+
+    
 @pytest.mark.skipif(
     not hasattr(tests.ssl_context(), "minimum_version"),
     reason="ssl doesn't support TLS min/max",
 )
-@pytest.mark.parametrize("version", (None, ssl.TLSVersion.TLSv1_2, "TLSv1_2"))
+@pytest.mark.parametrize("version", get_testable_tls_versions())
 def test_set_min_tls_version(version):
     # Test setting minimum TLS version
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
@@ -93,7 +101,7 @@ def test_set_min_tls_version(version):
     not hasattr(tests.ssl_context(), "maximum_version"),
     reason="ssl doesn't support TLS min/max",
 )
-@pytest.mark.parametrize("version", (None, ssl.TLSVersion.TLSv1_2, "TLSv1_2"))
+@pytest.mark.parametrize("version", get_testable_tls_versions())
 def test_set_max_tls_version(version):
     # Test setting maximum TLS version
     # We expect RuntimeError on Python < 3.7 or OpenSSL < 1.1
