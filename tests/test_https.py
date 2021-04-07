@@ -87,6 +87,7 @@ def test_set_min_tls_version_str():
     except socket.error:
         assert expect_success
 
+
 @pytest.mark.skipif(
     not hasattr(tests.ssl_context(), "minimum_version"),
     reason="ssl doesn't support TLS min/max",
@@ -121,7 +122,7 @@ def test_set_max_tls_version_str():
     except socket.error:
         assert expect_success
 
-        
+
 @pytest.mark.skipif(
     not hasattr(tests.ssl_context(), "maximum_version"),
     reason="ssl doesn't support TLS min/max",
