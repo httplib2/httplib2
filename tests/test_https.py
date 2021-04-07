@@ -4,6 +4,7 @@ from six.moves import urllib
 import socket
 import ssl
 import tests
+import sys
 
 
 def test_get_via_https():
