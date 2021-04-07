@@ -151,15 +151,21 @@ def _build_ssl_context(
     # source: https://docs.python.org/3/library/ssl.html#ssl.SSLContext.maximum_version
     if maximum_version is not None:
         if hasattr(context, "maximum_version"):
-            context.maximum_version = getattr(ssl.TLSVersion, maximum_version)
+            if isinstance(maximum_version, str):
+                context.maximum_version = getattr(ssl.TLSVersion, maximum_version)
+            else:
+                context.maximum_version = maximum_version
         else:
             raise RuntimeError("setting tls_maximum_version requires Python 3.7 and OpenSSL 1.1 or newer")
     if minimum_version is not None:
         if hasattr(context, "minimum_version"):
-            context.minimum_version = getattr(ssl.TLSVersion, minimum_version)
+            if isinstance(minimum_version, str):
+                context.minimum_version = getattr(ssl.TLSVersion, minimum_version)
+            else:
+                context.maximum_version = minimum_version
         else:
             raise RuntimeError("setting tls_minimum_version requires Python 3.7 and OpenSSL 1.1 or newer")
-
+            
     # check_hostname requires python 3.4+
     # we will perform the equivalent in HTTPSConnectionWithTimeout.connect() by calling ssl.match_hostname
     # if check_hostname is not supported.
