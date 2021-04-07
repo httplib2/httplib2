@@ -75,7 +75,8 @@ def test_not_trusted_ca():
     not hasattr(tests.ssl_context(), "minimum_version"),
     reason="ssl doesn't support TLS min/max",
 )
-def test_set_min_tls_version_str():
+@pytest.mark.parametrize("version", (None, ssl.TLSVersion.TLSv1_2, "TLSv1_2"))
+def test_set_min_tls_version(version):
     # Test setting minimum TLS version
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
     expect_success = hasattr(ssl.SSLContext(), 'minimum_version')
