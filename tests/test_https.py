@@ -79,7 +79,7 @@ def get_testable_tls_versions():
         return ()
     return (None, "TLSv1_2", ssl.TLSVersion.TLSv1_2)
 
-    
+
 @pytest.mark.skipif(
     not hasattr(tests.ssl_context(), "minimum_version"),
     reason="ssl doesn't support TLS min/max",
