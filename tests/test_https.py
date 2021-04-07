@@ -74,8 +74,8 @@ def test_not_trusted_ca():
 
 def get_testable_tls_versions():
     if sys.version_info < (3, 7, 0) \
-            or not hasattr(ssl_context(), "minimum_version") \
-            or not hasattr(ssl_context(), "maximum_version"):
+            or not hasattr(tests.ssl_context(), "minimum_version") \
+            or not hasattr(tests.ssl_context(), "maximum_version"):
         return ()
     return (None, "TLSv1_2", ssl.TLSVersion.TLSv1_2)
 
