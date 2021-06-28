@@ -88,6 +88,7 @@ A comprehensive HTTP client library, ``httplib2`` supports many features left ou
     package_data={"httplib2": ["*.txt"]},
     install_requires=read_requirements("requirements.txt"),
     tests_require=read_requirements("requirements-test.txt"),
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     cmdclass={"test": TestCommand},
     classifiers=[
         "Development Status :: 4 - Beta",
