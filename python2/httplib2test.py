@@ -7,7 +7,6 @@ __contributors__ = []
 __license__ = "MIT"
 __version__ = "0.1 ($Rev: 118 $)"
 
-import base64
 import httplib
 import httplib2
 import os
@@ -24,10 +23,6 @@ try:
 except ImportError:
     pass
 
-# Python 2.3 support
-if not hasattr(unittest.TestCase, "assertTrue"):
-    unittest.TestCase.assertTrue = unittest.TestCase.failUnless
-    unittest.TestCase.assertFalse = unittest.TestCase.failIf
 
 # The test resources base uri
 base = "http://bitworking.org/projects/httplib2/test/"
