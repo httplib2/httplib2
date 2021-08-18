@@ -71,14 +71,14 @@ class AppEngineHttpTest(unittest.TestCase):
         self.assertEqual(
             httplib2.SCHEME_TO_CONNECTION["https"], httplib2.AppEngineHttpsConnection
         )
-        self.assertEquals(1, len(http.connections))
-        self.assertEquals(response.status, 200)
-        self.assertEquals(response["status"], "200")
+        self.assertEqual(1, len(http.connections))
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response["status"], "200")
 
     def testProxyInfoIgnored(self):
         http = httplib2.Http(proxy_info=mock.MagicMock())
         response, content = http.request("http://www.google.com")
-        self.assertEquals(response.status, 200)
+        self.assertEqual(response.status, 200)
 
 
 if __name__ == "__main__":

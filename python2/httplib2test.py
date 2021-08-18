@@ -1909,12 +1909,12 @@ class HttpPrivateTest(unittest.TestCase):
         # Degenerate case of no headers
         response = {}
         end2end = httplib2._get_end2end_headers(response)
-        self.assertEquals(0, len(end2end))
+        self.assertEqual(0, len(end2end))
 
         # Degenerate case of connection referrring to a header not passed in
         response = {"connection": "content-type"}
         end2end = httplib2._get_end2end_headers(response)
-        self.assertEquals(0, len(end2end))
+        self.assertEqual(0, len(end2end))
 
 
 class TestProxyInfo(unittest.TestCase):
@@ -1927,37 +1927,37 @@ class TestProxyInfo(unittest.TestCase):
 
     def test_from_url(self):
         pi = httplib2.proxy_info_from_url("http://myproxy.example.com")
-        self.assertEquals(pi.proxy_host, "myproxy.example.com")
-        self.assertEquals(pi.proxy_port, 80)
-        self.assertEquals(pi.proxy_user, None)
+        self.assertEqual(pi.proxy_host, "myproxy.example.com")
+        self.assertEqual(pi.proxy_port, 80)
+        self.assertEqual(pi.proxy_user, None)
 
     def test_from_url_ident(self):
         pi = httplib2.proxy_info_from_url("http://zoidberg:fish@someproxy:99")
-        self.assertEquals(pi.proxy_host, "someproxy")
-        self.assertEquals(pi.proxy_port, 99)
-        self.assertEquals(pi.proxy_user, "zoidberg")
-        self.assertEquals(pi.proxy_pass, "fish")
+        self.assertEqual(pi.proxy_host, "someproxy")
+        self.assertEqual(pi.proxy_port, 99)
+        self.assertEqual(pi.proxy_user, "zoidberg")
+        self.assertEqual(pi.proxy_pass, "fish")
 
     def test_from_env(self):
         os.environ["http_proxy"] = "http://myproxy.example.com:8080"
         pi = httplib2.proxy_info_from_environment()
-        self.assertEquals(pi.proxy_host, "myproxy.example.com")
-        self.assertEquals(pi.proxy_port, 8080)
-        self.assertEquals(pi.bypass_hosts, [])
+        self.assertEqual(pi.proxy_host, "myproxy.example.com")
+        self.assertEqual(pi.proxy_port, 8080)
+        self.assertEqual(pi.bypass_hosts, [])
 
     def test_from_env_no_proxy(self):
         os.environ["http_proxy"] = "http://myproxy.example.com:80"
         os.environ["https_proxy"] = "http://myproxy.example.com:81"
         os.environ["no_proxy"] = "localhost,otherhost.domain.local"
         pi = httplib2.proxy_info_from_environment("https")
-        self.assertEquals(pi.proxy_host, "myproxy.example.com")
-        self.assertEquals(pi.proxy_port, 81)
-        self.assertEquals(pi.bypass_hosts, ["localhost", "otherhost.domain.local"])
+        self.assertEqual(pi.proxy_host, "myproxy.example.com")
+        self.assertEqual(pi.proxy_port, 81)
+        self.assertEqual(pi.bypass_hosts, ["localhost", "otherhost.domain.local"])
 
     def test_from_env_none(self):
         os.environ.clear()
         pi = httplib2.proxy_info_from_environment()
-        self.assertEquals(pi, None)
+        self.assertEqual(pi, None)
 
     def test_applies_to(self):
         os.environ["http_proxy"] = "http://myproxy.example.com:80"
@@ -1980,7 +1980,7 @@ class TestProxyInfo(unittest.TestCase):
         pi = httplib2.ProxyInfo(
             httplib2.socks.PROXY_TYPE_HTTP, "localhost", 1234, proxy_headers=headers
         )
-        self.assertEquals(pi.proxy_headers, headers)
+        self.assertEqual(pi.proxy_headers, headers)
 
 
 if __name__ == "__main__":
