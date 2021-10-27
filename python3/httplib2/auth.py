@@ -3,14 +3,13 @@ import re
 
 import pyparsing as pp
 
+from .error import *
+
 
 try:  # pyparsing>=3.0.0
     downcaseTokens = pp.common.downcaseTokens
 except AttributeError:
     downcaseTokens = pp.downcaseTokens
-
-
-from .error import *
 
 UNQUOTE_PAIRS = re.compile(r"\\(.)")
 unquote = lambda s, l, t: UNQUOTE_PAIRS.sub(r"\1", t[0][1:-1])
