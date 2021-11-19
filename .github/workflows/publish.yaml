@@ -5,7 +5,7 @@ on:
   # on push to master without a version tag, publish to test PyPI registry
   # ... with version tag, publish to production PyPI registry.
   push:
-    branches: [master]
+    branches: [master, stage]
 jobs:
   build:
     # https://github.community/t/duplicate-checks-on-push-and-pull-request-simultaneous-event/18012/5
@@ -84,7 +84,7 @@ jobs:
         run: echo TODO=check twine upload --non-interactive --verbose dist/*
 
   publish-test:
-    if: ${{ github.repository == 'httplib2/httplib2' && github.ref == 'refs/heads/master' }}
+    if: ${{ github.repository == 'httplib2/httplib2' && github.ref == 'refs/heads/stage' }}
     needs: [build]
     environment: pypi-test
     runs-on: ubuntu-latest
@@ -111,7 +111,7 @@ jobs:
           name: dist
 
       - name: twine upload (test)
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/stage'
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
