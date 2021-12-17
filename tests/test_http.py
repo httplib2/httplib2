@@ -237,7 +237,7 @@ def test_get_301():
     assert response2.previous.fromcache
 
 
-@pytest.mark.skip(
+@pytest.mark.skipif(
     not os.environ.get("httplib2_test_still_run_skipped") and os.environ.get("PYTHON_VERSION") in ("2.7", "pypy"),
     reason="FIXME: timeout on CI py27 and pypy, works elsewhere",
 )
@@ -379,7 +379,7 @@ def test_get_302_no_location():
     assert content == b""
 
 
-@pytest.mark.skip(
+@pytest.mark.skipif(
     not os.environ.get("httplib2_test_still_run_skipped") and os.environ.get("PYTHON_VERSION") in ("2.7", "pypy"),
     reason="FIXME: timeout on CI py27 and pypy, works elsewhere",
 )
