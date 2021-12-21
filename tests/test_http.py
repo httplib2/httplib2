@@ -11,6 +11,7 @@ try:
 except ImportError:
     import mock
 import os
+import sys
 import pytest
 from six.moves import http_client, urllib
 import socket
@@ -57,7 +58,7 @@ def test_unknown_server():
 
 
 # @pytest.mark.skipif(
-#     os.environ.get("PYTHON_VERSION") in ("2.7", "pypy"),
+#     not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
 #     reason="Fails on Travis py27/pypy, works elsewhere. See https://travis-ci.org/httplib2/httplib2/jobs/408769880.",
 # )
 @mock.patch("socket.socket.connect", spec=True)
@@ -70,7 +71,7 @@ def test_connection_refused_raises_exception(mock_socket_connect):
 
 
 # @pytest.mark.skipif(
-#     os.environ.get("PYTHON_VERSION") in ("2.7", "pypy"),
+#     not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
 #     reason="Fails on Travis py27/pypy, works elsewhere. See https://travis-ci.org/httplib2/httplib2/jobs/408769880.",
 # )
 @mock.patch("socket.socket.connect", spec=True)
@@ -238,7 +239,7 @@ def test_get_301():
 
 
 @pytest.mark.skipif(
-    not os.environ.get("httplib2_test_still_run_skipped") and os.environ.get("PYTHON_VERSION") in ("2.7", "pypy"),
+    not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
     reason="FIXME: timeout on CI py27 and pypy, works elsewhere",
 )
 def test_head_301():
@@ -380,7 +381,7 @@ def test_get_302_no_location():
 
 
 @pytest.mark.skipif(
-    not os.environ.get("httplib2_test_still_run_skipped") and os.environ.get("PYTHON_VERSION") in ("2.7", "pypy"),
+    not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
     reason="FIXME: timeout on CI py27 and pypy, works elsewhere",
 )
 def test_303():
