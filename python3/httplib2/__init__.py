@@ -1255,7 +1255,7 @@ class Http(object):
 
         tls_maximum_version / tls_minimum_version require Python 3.7+ /
         OpenSSL 1.1.0g+. A value of "TLSv1_3" requires OpenSSL 1.1.1+.
-"""
+        """
         self.proxy_info = proxy_info
         self.ca_certs = ca_certs
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
