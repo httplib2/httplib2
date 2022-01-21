@@ -38,6 +38,19 @@ def test_from_url_ident():
     assert pi.proxy_user == "zoidberg"
     assert pi.proxy_pass == "fish"
 
+def test_from_no_scheme_string():
+    pi = httplib2.proxy_info_from_url("zoidberg:fish@someproxy:99")
+    assert pi.proxy_host == "someproxy"
+    assert pi.proxy_port == 99
+    assert pi.proxy_user == "zoidberg"
+    assert pi.proxy_pass == "fish"
+
+def test_from_no_scheme_host_only_string():
+    pi = httplib2.proxy_info_from_url("someproxy")
+    assert pi.proxy_host == "someproxy"
+    assert pi.proxy_port == 80
+    assert pi.proxy_user == None
+    assert pi.proxy_pass == None
 
 def test_from_url_no_password():
     pi = httplib2.proxy_info_from_url("http://leila@fro.xy:1032")

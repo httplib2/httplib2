@@ -929,18 +929,19 @@ def proxy_info_from_environment(method="http"):
 def proxy_info_from_url(url, method="http", noproxy=None):
     """Construct a ProxyInfo from a URL (such as http_proxy env var)
     """
-    url = urllib.parse.urlparse(url)
     username = None
     password = None
     port = None
-    if "@" in url[1]:
-        ident, host_port = url[1].split("@", 1)
+    if "://" in url:
+        url = url.split("://")[1]
+    if "@" in url:
+        ident, host_port = url.split("@", 1)
         if ":" in ident:
             username, password = ident.split(":", 1)
         else:
             password = ident
     else:
-        host_port = url[1]
+        host_port = url
     if ":" in host_port:
         host, port = host_port.split(":", 1)
     else:
