@@ -1084,7 +1084,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
             key_password=key_password,
         )
         super(HTTPSConnectionWithTimeout, self).__init__(
-            host, port=port, timeout=timeout, context=context,
+            host, port=port, timeout=timeout, context=context, key_file=key_file, cert_file=cert_file, check_hostname=False
         )
         self.key_file = key_file
         self.cert_file = cert_file
