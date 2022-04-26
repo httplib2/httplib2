@@ -767,8 +767,7 @@ class FileCache(object):
     def __init__(self, cache, safe=safename):  # use safe=lambda x: md5.new(x).hexdigest() for the old behavior
         self.cache = cache
         self.safe = safe
-        if not os.path.exists(cache):
-            os.makedirs(self.cache)
+        os.makedirs(self.cache, exist_ok=True)
 
     def get(self, key):
         retval = None
