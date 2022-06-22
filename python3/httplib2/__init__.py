@@ -128,8 +128,14 @@ CA_CERTS = certs.where()
 # Both PROTOCOL_TLS and PROTOCOL_SSLv23 are equivalent and means:
 # > Selects the highest protocol version that both the client and server support.
 # > Despite the name, this option can select “TLS” protocols as well as “SSL”.
-# source: https://docs.python.org/3.5/library/ssl.html#ssl.PROTOCOL_TLS
-DEFAULT_TLS_VERSION = getattr(ssl, "PROTOCOL_TLS", None) or getattr(ssl, "PROTOCOL_SSLv23")
+# source: https://docs.python.org/3.5/library/ssl.html#ssl.PROTOCOL_SSLv23
+
+# PROTOCOL_TLS_CLIENT is python 3.10.0+. PROTOCOL_TLS is deprecated.
+# > Auto-negotiate the highest protocol version that both the client and server support, and configure the context client-side connections.
+# > The protocol enables CERT_REQUIRED and check_hostname by default.
+# source: https://docs.python.org/3.10/library/ssl.html#ssl.PROTOCOL_TLS
+
+DEFAULT_TLS_VERSION = getattr(ssl, "PROTOCOL_TLS_CLIENT", None) or getattr(ssl, "PROTOCOL_TLS", None) or getattr(ssl, "PROTOCOL_SSLv23")
 
 
 def _build_ssl_context(
