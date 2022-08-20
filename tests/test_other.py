@@ -188,7 +188,7 @@ def test_get_end2end_headers():
     end2end = httplib2._get_end2end_headers(response)
     assert len(end2end) == 0
 
-    # Degenerate case of connection referrring to a header not passed in
+    # Degenerate case of connection referring to a header not passed in
     response = {"connection": "content-type"}
     end2end = httplib2._get_end2end_headers(response)
     assert len(end2end) == 0
