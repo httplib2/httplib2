@@ -185,14 +185,16 @@ def _get_end2end_headers(response):
 
 def _errno_from_exception(e):
     # socket.error and common wrap in .args
-    if len(e.args) > 0:
-        return e.args[0].errno if isinstance(e.args[0], socket.error) else e.errno
+    if hasattr(e, "args") and len(e.args) > 0:
+        return _errno_from_exception(e.args[0])
 
     # pysocks.ProxyError wraps in .socket_err
     # https://github.com/httplib2/httplib2/pull/202
     if hasattr(e, "socket_err"):
-        e_int = e.socket_err
-        return e_int.args[0].errno if isinstance(e_int.args[0], socket.error) else e_int.errno
+        return _errno_from_exception(e.socket_err)
+
+    if hasattr(e, "errno"):
+        return e.errno
 
     return None
 
