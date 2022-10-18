@@ -13,6 +13,7 @@ __contributors__ = [
     "Louis Nyffenegger",
     "Mark Pilgrim",
     "Alex Yu",
+    "Lai Han"
 ]
 __license__ = "MIT"
 __version__ = "0.20.4"
