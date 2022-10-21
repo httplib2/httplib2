@@ -193,10 +193,7 @@ def _errno_from_exception(e):
     if hasattr(e, "socket_err"):
         return _errno_from_exception(e.socket_err)
 
-    if hasattr(e, "errno"):
-        return e.errno
-
-    return None
+    return getattr(e, "errno", None)
 
 
 URI = re.compile(r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?")
