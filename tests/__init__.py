@@ -755,6 +755,15 @@ def deflate_decompress(bs):
     return zlib.decompress(bs, -zlib.MAX_WBITS)
 
 
+def zlib_compress(bs):
+    do = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS)
+    return do.compress(bs) + do.flush()
+
+
+def zlib_decompress(bs):
+    return zlib.decompress(bs, zlib.MAX_WBITS)
+
+
 def ssl_context(protocol=None):
     """Workaround for old SSLContext() required protocol argument."""
     if sys.version_info < (3, 5, 3):
