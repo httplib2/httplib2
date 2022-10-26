@@ -17,7 +17,7 @@ __contributors__ = [
     "Sam Ruby",
     "Louis Nyffenegger",
     "Alex Yu",
-    "Lai Han"
+    "Lai Han",
 ]
 __license__ = "MIT"
 __version__ = "0.20.4"
@@ -471,7 +471,7 @@ def _decompressContent(response, new_content):
                 try:
                     content = zlib.decompress(content, zlib.MAX_WBITS)
                 except (IOError, zlib.error):
-                    content = zlib.decompress(content, -zlib.MAX_WBITS)           
+                    content = zlib.decompress(content, -zlib.MAX_WBITS)
             response["content-length"] = str(len(content))
             # Record the historical presence of the encoding in a way the won't interfere.
             response["-content-encoding"] = response["content-encoding"]
