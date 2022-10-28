@@ -183,10 +183,19 @@ def _get_end2end_headers(response):
     return [header for header in list(response.keys()) if header not in hopbyhop]
 
 
+_missing = object()
+
+
 def _errno_from_exception(e):
+    # TODO python 3.11+ cheap try: return e.errno except AttributeError: pass
+    errno = getattr(e, "errno", _missing)
+    if errno is not _missing:
+        return errno
+
     # socket.error and common wrap in .args
-    if hasattr(e, "args") and len(e.args) > 0:
-        return _errno_from_exception(e.args[0])
+    args = getattr(e, "args", None)
+    if args:
+        return _errno_from_exception(args[0])
 
     # pysocks.ProxyError wraps in .socket_err
     # https://github.com/httplib2/httplib2/pull/202
