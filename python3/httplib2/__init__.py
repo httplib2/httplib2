@@ -199,8 +199,9 @@ def _errno_from_exception(e):
 
     # pysocks.ProxyError wraps in .socket_err
     # https://github.com/httplib2/httplib2/pull/202
-    if hasattr(e, "socket_err"):
-        return _errno_from_exception(e.socket_err)
+    socket_err = getattr(e, "socket_err", None)
+    if socket_err:
+        return _errno_from_exception(socket_err)
 
     return None
 
