@@ -197,3 +197,10 @@ def test_https_redirect_http():
             assert response["content-location"] == uri_http
             assert response.previous.status == 301
             assert response.previous["content-location"] == uri_https
+
+
+def test_disable_ssl_certificate_validation():
+    http = httplib2.Http(disable_ssl_certificate_validation=True)
+    with tests.server_const_http(tls=True) as uri:
+        response, _ = http.request(uri, "GET")
+        assert response.status == 200
