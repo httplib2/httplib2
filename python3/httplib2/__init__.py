@@ -152,10 +152,7 @@ def _build_ssl_context(
         raise RuntimeError("httplib2 requires Python 3.2+ for ssl.SSLContext")
 
     context = ssl.SSLContext(DEFAULT_TLS_VERSION)
-    # It is required to disable check_hostname validation before changing verify_mode to CERT_NONE
-    # for PROTOCOL_TLS_CLIENT
-    if DEFAULT_TLS_VERSION.name == 'PROTOCOL_TLS_CLIENT':
-        context.check_hostname = not bool(disable_ssl_certificate_validation)
+    context.check_hostname = not disable_ssl_certificate_validation
     context.verify_mode = ssl.CERT_NONE if disable_ssl_certificate_validation else ssl.CERT_REQUIRED
 
     # SSLContext.maximum_version and SSLContext.minimum_version are python 3.7+.
