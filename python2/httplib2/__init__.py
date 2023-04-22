@@ -954,8 +954,7 @@ def proxy_info_from_environment(method="http"):
     if method not in ["http", "https"]:
         return
 
-    env_var = method + "_proxy"
-    url = os.environ.get(env_var, os.environ.get(env_var.upper()))
+    url = urllib.getproxies().get(method)
     if not url:
         return
     return proxy_info_from_url(url, method, None)
@@ -1417,7 +1416,7 @@ class Http(object):
         `proxy_info` may be:
           - a callable that takes the http scheme ('http' or 'https') and
             returns a ProxyInfo instance per request. By default, uses
-            proxy_nfo_from_environment.
+            proxy_info_from_environment.
           - a ProxyInfo instance (static proxy config).
           - None (proxy disabled).
 
