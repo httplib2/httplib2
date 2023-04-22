@@ -77,6 +77,8 @@ if ssl is not None:
     ssl_SSLError = getattr(ssl, "SSLError", None)
     ssl_CertificateError = getattr(ssl, "CertificateError", None)
 
+# socks.PROXY_TYPE_SOCKS4, socks.PROXY_TYPE_SOCKS5, socks.PROXY_TYPE_HTTP
+proxy_schemes = { 'socks4' : 1, 'socks5' : 2, 'http' : 3 }
 
 def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation, ca_certs, ssl_version, hostname, key_password):
     if disable_validation:
@@ -967,6 +969,10 @@ def proxy_info_from_url(url, method="http", noproxy=None):
     url = urlparse.urlparse(url)
 
     proxy_type = 3  # socks.PROXY_TYPE_HTTP
+    if len(url.scheme) > 0:
+        _scheme_prefix = url.scheme.lower()
+        if _scheme_prefix in proxy_schemes:
+            proxy_type = proxy_schemes[_scheme_prefix]
     pi = ProxyInfo(
         proxy_type=proxy_type,
         proxy_host=url.hostname,
