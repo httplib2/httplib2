@@ -1841,6 +1841,7 @@ class Http(object):
                         info["-x-permanent-redirect-url"],
                         method=redirect_method,
                         headers=headers,
+                        body=body,
                         redirections=redirections - 1,
                     )
                     response.previous = Response(info)
