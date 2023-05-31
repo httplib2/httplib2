@@ -1088,6 +1088,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
         tls_maximum_version=None,
         tls_minimum_version=None,
         key_password=None,
+        forceauth=False,
     ):
 
         self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
@@ -1282,6 +1283,9 @@ class Http(object):
         # authorization objects
         self.authorizations = []
 
+        # Whether to use auth on first try
+        self.forceauth = forceauth
+
         # If set to False then no redirects are followed, even safe ones.
         self.follow_redirects = True
 
@@ -1339,6 +1343,13 @@ class Http(object):
             for scheme in AUTH_SCHEME_ORDER:
                 if scheme in challenges:
                     yield AUTH_SCHEME_CLASSES[scheme](cred, host, request_uri, headers, response, content, self)
+
+    def _auth_from_definition(self, host, request_uri, headers, scheme):
+        """A generator that creates an Authorization object
+           based on a scheme specification.
+        """
+        for cred in self.credentials.iter(host):
+            yield AUTH_SCHEME_CLASSES[scheme](cred, host, request_uri, headers, '', '', self)
 
     def add_credentials(self, name, password, domain=""):
         """Add a name and password that will be used
@@ -1435,6 +1446,11 @@ class Http(object):
     ):
         """Do the actual request using the connection object
         and also follow one level of redirects if necessary"""
+
+        if self.forceauth:
+            for authorization in self._auth_from_definition(
+                host, request_uri, headers, self.forceauth):
+                authorization.request(method, request_uri, headers, body)
 
         auths = [(auth.depth(request_uri), auth) for auth in self.authorizations if auth.inscope(host, request_uri)]
         auth = auths and sorted(auths)[0][1] or None
