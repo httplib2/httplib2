@@ -4,6 +4,8 @@ on:
   pull_request:
   schedule:
     - cron: "34 4 */7 * *" # every week, time chosen by RNG
+env:
+  FORCE_COLOR: 1
 jobs:
   test:
     name: "test ${{ matrix.py }}"
@@ -24,17 +26,19 @@ jobs:
           - { py: 3.9, ignore-error: false, os: ubuntu-latest }
           - { py: "3.10", ignore-error: false, os: ubuntu-latest }
           - { py: "3.11", ignore-error: false, os: ubuntu-latest }
+          - { py: "3.12", ignore-error: false, os: ubuntu-latest }
           - { py: 3.x, ignore-error: true, os: ubuntu-latest }
           - { py: pypy2.7, ignore-error: false, os: ubuntu-latest }
           - { py: pypy3.9, ignore-error: false, os: ubuntu-latest }
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: setup python ${{ matrix.py }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.py }}
+          allow-prereleases: true
           cache: pip
           cache-dependency-path: |
             pyproject.toml
@@ -56,7 +60,7 @@ jobs:
     if: false && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'httplib2/httplib2')
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: cache pip
         uses: actions/cache@v3
