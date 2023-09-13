@@ -24,6 +24,7 @@ jobs:
           - { py: 3.9, ignore-error: false, os: ubuntu-latest }
           - { py: "3.10", ignore-error: false, os: ubuntu-latest }
           - { py: "3.11", ignore-error: false, os: ubuntu-latest }
+          - { py: "3.12", ignore-error: false, os: ubuntu-latest }
           - { py: 3.x, ignore-error: true, os: ubuntu-latest }
           - { py: pypy2.7, ignore-error: false, os: ubuntu-latest }
           - { py: pypy3.9, ignore-error: false, os: ubuntu-latest }
@@ -35,6 +36,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.py }}
+          allow-prereleases: true
           cache: pip
           cache-dependency-path: |
             pyproject.toml
