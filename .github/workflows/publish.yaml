@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: cache pip
         uses: actions/cache@v3
@@ -27,7 +27,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: setup python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - name: install tools
@@ -42,7 +42,7 @@ jobs:
       - name: script/test install_check_version
         run: stages=venv,check_version script/test
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist/
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: cache pip
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-publish
@@ -66,13 +66,13 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - name: install tools
         run: pip install twine
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist/
@@ -104,13 +104,13 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: setup python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - name: install tools
         run: pip install twine
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist/

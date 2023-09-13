@@ -29,7 +29,7 @@ jobs:
           - { py: pypy3.9, ignore-error: false, os: ubuntu-latest }
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: setup python ${{ matrix.py }}
         uses: actions/setup-python@v4
@@ -56,7 +56,7 @@ jobs:
     if: false && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'httplib2/httplib2')
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: cache pip
         uses: actions/cache@v3
