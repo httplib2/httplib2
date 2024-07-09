@@ -976,7 +976,7 @@ def proxy_info_from_url(url, method="http", noproxy=None):
     pi = ProxyInfo(
         proxy_type=proxy_type,
         proxy_host=url.hostname,
-        proxy_port=url.port or dict(https=443, http=80)[method],
+        proxy_port=url.port or dict(https=443, http=80, socks4=1080, socks5=1080)[method],
         proxy_user=url.username or None,
         proxy_pass=url.password or None,
         proxy_headers=None,
