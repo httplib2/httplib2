@@ -81,6 +81,8 @@ debuglevel = 0
 # A request will be tried 'RETRIES' times if it fails at the socket/connection level.
 RETRIES = 2
 
+# socks.PROXY_TYPE_SOCKS4, socks.PROXY_TYPE_SOCKS5, socks.PROXY_TYPE_HTTP
+proxy_schemes = { 'socks4' : 1, 'socks5' : 2, 'http' : 3 }
 
 # Open Items:
 # -----------
@@ -955,10 +957,14 @@ def proxy_info_from_url(url, method="http", noproxy=None):
     url = urllib.parse.urlparse(url)
 
     proxy_type = 3  # socks.PROXY_TYPE_HTTP
+    if len(url.scheme) > 0:
+        _scheme_prefix = url.scheme.lower()
+        if _scheme_prefix in proxy_schemes:
+            proxy_type = proxy_schemes[_scheme_prefix]
     pi = ProxyInfo(
         proxy_type=proxy_type,
         proxy_host=url.hostname,
-        proxy_port=url.port or dict(https=443, http=80)[method],
+        proxy_port=url.port or dict(https=443, http=80, socks4=1080, socks5=1080)[method],
         proxy_user=url.username or None,
         proxy_pass=url.password or None,
         proxy_headers=None,
