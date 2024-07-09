@@ -1,3 +1,99 @@
+0.22.0
+
+  https: disable_ssl_certificate_validation caused ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled
+  https://github.com/httplib2/httplib2/pull/231
+
+  build(deps): bump cryptography from 37.0.4 to 38.0.3
+  Reason from cryptography changelog: Updated Windows, macOS, and Linux wheels to be compiled with OpenSSL 3.0.7, which resolves CVE-2022-3602 and CVE-2022-3786.
+
+0.21.0
+
+  http: `Content-Encoding: deflate` must accept zlib encapsulation
+  https://github.com/httplib2/httplib2/pull/230
+
+  Begin support and CI against CPython 3.10 and 3.11.
+
+0.20.4
+
+  proxy: support proxy urls with ipv6 address
+  https://github.com/httplib2/httplib2/pull/217
+
+0.20.3
+
+  No changes in library. Tests compatible with Python3.10 and recent pytest.
+
+0.20.2
+
+  auth: support pyparsing v3 (AttributeError downcaseTokens)
+  https://github.com/httplib2/httplib2/issues/207
+
+  proxy: correct extraction of errno from pysocks ProxyConnectionError
+  https://github.com/httplib2/httplib2/pull/202
+
+0.20.1
+
+  No changes from 0.20.0, re-upload of broken py2 wheel.
+
+0.20.0
+
+  IMPORTANT cacerts: remove expired DST Root CA X3, add ISRG Root X1, X2
+  https://github.com/httplib2/httplib2/pull/200
+  https://github.com/httplib2/httplib2/issues/203
+
+  tls: accept min/max ssl.TLSVersion enum values
+  https://github.com/httplib2/httplib2/pull/191
+
+  setup(python_requires=...) may need setuptools update
+  https://github.com/httplib2/httplib2/pull/195
+
+0.19.1
+
+  auth header parsing performance optimizations; Thanks to Paul McGuire
+
+  Use mock from the standard library on Python>=3.3
+
+0.19.0
+
+  auth: parse headers using pyparsing instead of regexp
+  https://github.com/httplib2/httplib2/pull/182
+
+  auth: WSSE token needs to be string not bytes
+  https://github.com/httplib2/httplib2/pull/179
+
+0.18.1
+
+  explicit build-backend workaround for pip build isolation bug
+  "AttributeError: 'module' object has no attribute '__legacy__'" on pip install
+  https://github.com/httplib2/httplib2/issues/169
+
+0.18.0
+
+  IMPORTANT security vulnerability CWE-93 CRLF injection
+  Force %xx quote of space, CR, LF characters in uri.
+  Special thanks to Recar https://github.com/Ciyfly for discrete notification.
+  https://cwe.mitre.org/data/definitions/93.html
+
+0.17.4
+
+  Ship test suite in source dist
+  https://github.com/httplib2/httplib2/pull/168
+
+0.17.3
+
+  IronPython2.7: relative import iri2uri fixes ImportError
+  https://github.com/httplib2/httplib2/pull/163
+
+0.17.2
+
+  python3 + debug + IPv6 disabled: https raised
+  "IndexError: Replacement index 1 out of range for positional args tuple"
+  https://github.com/httplib2/httplib2/issues/161
+
+0.17.1
+
+  python3: no_proxy was not checked with https
+  https://github.com/httplib2/httplib2/issues/160
+
 0.17.0
 
   feature: Http().redirect_codes set, works after follow(_all)_redirects check

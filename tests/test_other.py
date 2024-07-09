@@ -1,6 +1,9 @@
 import httplib2
-import mock
-import os
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 import pickle
 import pytest
 import socket
@@ -185,16 +188,16 @@ def test_get_end2end_headers():
     end2end = httplib2._get_end2end_headers(response)
     assert len(end2end) == 0
 
-    # Degenerate case of connection referrring to a header not passed in
+    # Degenerate case of connection referring to a header not passed in
     response = {"connection": "content-type"}
     end2end = httplib2._get_end2end_headers(response)
     assert len(end2end) == 0
 
 
-@pytest.mark.xfail(
-    os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-    reason="FIXME: fail on Travis py27 and pypy, works elsewhere",
-)
+# @pytest.mark.xfail(
+#     os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
+#     reason="FIXME: fail on Travis py27 and pypy, works elsewhere",
+# )
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_ipv6(scheme):
     # Even if IPv6 isn't installed on a machine it should just raise socket.error

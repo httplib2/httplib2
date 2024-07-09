@@ -95,3 +95,18 @@ def test_deflate_malformed_response():
         response, content = http.request(uri, "GET")
         assert response.status == 500
         assert response.reason.startswith("Content purported")
+
+
+def test_zlib_get():
+    # Test that we support zlib compression
+    http = httplib2.Http()
+    response = tests.http_response_bytes(
+        headers={"content-encoding": "deflate"},
+        body=tests.zlib_compress(b"properly compressed"),
+    )
+    with tests.server_const_bytes(response) as uri:
+        response, content = http.request(uri, "GET")
+        assert response.status == 200
+        assert "content-encoding" not in response
+        assert int(response["content-length"]) == len(b"properly compressed")
+        assert content == b"properly compressed"

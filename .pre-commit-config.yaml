@@ -1,0 +1,40 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-toml
+      - id: check-yaml
+      # - id: end-of-file-fixer
+      # - id: trailing-whitespace
+
+  # TODO enable after py2/3 merge and initial black/isort run
+  # - repo: https://github.com/asottile/pyupgrade
+  #   rev: v3.1.0
+  #   hooks:
+  #     - id: pyupgrade
+
+  - repo: local
+    hooks:
+      - id: pre-commit-validate-config
+        name: validate pre-commit config
+        files: "^.pre-commit-config.yaml$"
+        types: [yaml]
+        entry: pre-commit validate-config
+        language: system
+        fail_fast: true
+
+      - id: test
+        name: run code style and unit tests
+        types_or: [text, python, shell, toml, yaml]
+        exclude: "^(build|dist|doc|python2|ref|venv[^/]*?)/"
+        entry: script/test -sv
+        language: system
+        pass_filenames: false
+        require_serial: true

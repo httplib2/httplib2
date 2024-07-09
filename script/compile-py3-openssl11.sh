@@ -1,20 +1,20 @@
-#!not for running standalone, see .travis.yml
+#!not for running standalone, see .github/workflows/test.yaml
 
 cache_dir=$HOME/.cache
 install_dir=$cache_dir/py3-openssl11
 python_version="3.7.3"
-openssl_version="1.1.1c"
+openssl_version="1.1.1f"
 cpucount=$(nproc --all)
 export PYTHONDONTWRITEBYTECODE=1
 
 #rm -rf $cache_dir/* # uncomment to rebuild
 
-if [[ $($install_dir/bin/python -V) != "Python $python_version" ]] ; then
+if [[ ! -x "$install_dir/bin/python" ]] || [[ $($install_dir/bin/python -V) != "Python $python_version" ]] ; then
   (
   mkdir -p /tmp/source
   cd /tmp/source
   # Compile OpenSSL
-  wget --quiet https://www.openssl.org/source/openssl-$openssl_version.tar.gz
+  curl -fLOsS "https://www.openssl.org/source/openssl-$openssl_version.tar.gz"
   echo "Extracting OpenSSL..."
   tar xf openssl-$openssl_version.tar.gz
   cd ./openssl-$openssl_version
@@ -29,7 +29,7 @@ if [[ $($install_dir/bin/python -V) != "Python $python_version" ]] ; then
   cd /tmp/source
   sudo apt install -qq --yes libffi-dev
   # Compile latest Python
-  wget --quiet https://www.python.org/ftp/python/$python_version/Python-$python_version.tar.xz
+  curl -fLOsS "https://www.python.org/ftp/python/$python_version/Python-$python_version.tar.xz"
   echo "Extracting Python..."
   tar xf Python-$python_version.tar.xz
   cd ./Python-$python_version
