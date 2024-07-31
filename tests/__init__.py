@@ -358,7 +358,7 @@ def server_socket(fun, request_count=1, timeout=5, scheme="", tls=None):
         tls = SERVER_CHAIN
     if tls:
         # TODO: Drop py3.3 support and replace this with ssl.create_default_context
-        ssl_context = ssl.SSLContext(getattr(ssl, "PROTOCOL_TLS", None) or getattr(ssl, "PROTOCOL_SSLv23"))
+        ssl_context = ssl.SSLContext(getattr(ssl, "PROTOCOL_TLS_SERVER", None) or getattr(ssl, "PROTOCOL_TLS", None) or getattr(ssl, "PROTOCOL_SSLv23"))
         # TODO: leave this when py3.3 support is dropped
         # ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=CA_CERTS)
 
