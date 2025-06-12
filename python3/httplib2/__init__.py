@@ -390,10 +390,10 @@ def _decompressContent(response, new_content):
     content = new_content
     try:
         encoding = response.get("content-encoding", None)
-        if encoding in ["gzip", "deflate"]:
-            if encoding == "gzip":
+        if encoding in ["gzip", "deflate", "x-gzip", "x-deflate"]:
+            if encoding == "gzip" or encoding == "x-gzip":
                 content = gzip.GzipFile(fileobj=io.BytesIO(new_content)).read()
-            if encoding == "deflate":
+            if encoding == "deflate" or encoding == "x-deflate":
                 try:
                     content = zlib.decompress(content, zlib.MAX_WBITS)
                 except (IOError, zlib.error):
