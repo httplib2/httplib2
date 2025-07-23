@@ -26,7 +26,10 @@ main() {
 
 	if enabled style ; then
 		pip install black isort
-		grep -E 'flake8' <requirements-test.txt |xargs pip install
+		tmp=venv/tmp-requirements-flake8.txt
+		grep -E 'flake8' <requirements-test.txt >"$tmp"
+		pip install -r "$tmp"
+		rm "$tmp"
 		# TODO enable after py2/3 merge and initial black/isort run
         # isort python3/ tests/
         # black python3/ tests/
@@ -46,6 +49,7 @@ main() {
         rm -f dist/*.gz
 		# TODO: sdist bdist_wheel
 		# but wheels don't roll well with our 2/3 split code base
+        pip install setuptools
 		python setup.py sdist
 		install_check_version
 	fi
