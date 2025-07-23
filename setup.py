@@ -3,7 +3,6 @@ import setuptools
 import setuptools.command.test
 import sys
 
-pkgdir = {"": "python%s" % sys.version_info[0]}
 VERSION = "0.22.0"
 
 
@@ -83,12 +82,11 @@ A comprehensive HTTP client library, ``httplib2`` supports many features left ou
 **Unit Tested**
   A large and growing set of unit tests.
 """,
-    package_dir=pkgdir,
     packages=["httplib2"],
     package_data={"httplib2": ["*.txt"]},
     install_requires=read_requirements("requirements.txt"),
     tests_require=read_requirements("requirements-test.txt"),
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+    python_requires=">=3.6",
     cmdclass={"test": TestCommand},
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -97,17 +95,7 @@ A comprehensive HTTP client library, ``httplib2`` supports many features left ou
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Software Development :: Libraries",
     ],

@@ -46,8 +46,7 @@ auto_prepare_release() {
 		last_tag=${last_tag##v}
 		version_replace="${last_tag}.post$(date -u +%y%m%d%H%M)"
 		update_version "setup.py" "s/VERSION =.+/VERSION = \"$version_replace\"/"
-		update_version "python2/httplib2/__init__.py" "s/__version__ =.+/__version__ = \"$version_replace\"/"
-		update_version "python3/httplib2/__init__.py" "s/__version__ =.+/__version__ = \"$version_replace\"/"
+		update_version "httplib2/__init__.py" "s/__version__ =.+/__version__ = \"$version_replace\"/"
 		version_check "$version_replace"
 	fi
 }
@@ -56,7 +55,7 @@ interactive() {
 	echo 'script/release: interactive mode for creating new tagged releases with human assistance' >&2
 
 	local branch="${1-$(git symbolic-ref --short HEAD)}"
-	version=$(python -Es -c "$(egrep '^__version__' python3/httplib2/__init__.py);print(__version__)")
+	version=$(python -Es -c "$(egrep '^__version__' httplib2/__init__.py);print(__version__)")
 	printf "\nbranch: %s httplib2.__version__: '%s'\n" $branch $version >&2
 
 	if [[ "$branch" != "master" ]] ; then
@@ -85,7 +84,7 @@ interactive() {
 
 	echo "Building package" >&2
 	find . -name '*.pyc' -o -name '*.pyo' -o -name '*.orig' -delete
-	rm -rf python{2,3}/.cache
+	rm -rf .cache
 	rm -rf build dist
 	local venv=./venv-release
 	if [[ ! -d "$venv" ]] ; then
@@ -133,8 +132,7 @@ bump_version() {
 	fi
 	echo "Next version:    '$version_next'" >&2
 
-	update_version "python3/httplib2/__init__.py" "s/__version__ =.+/__version__ = \"$version_next\"/"
-	update_version "python2/httplib2/__init__.py" "s/__version__ =.+/__version__ = \"$version_next\"/"
+	update_version "httplib2/__init__.py" "s/__version__ =.+/__version__ = \"$version_next\"/"
 	update_version "setup.py" "s/VERSION =.+/VERSION = \"$version_next\"/"
 
 	confirm "Confirm changes? [yN] " || exit 1
@@ -144,7 +142,7 @@ update_version() {
 	local path="$1"
 	local sed_expr="$2"
 		# sed -E --in-place='' -e "s/VERSION =.+/VERSION = \"$version_replace\"/" setup.py
-		# sed -E --in-place='' -e "s/__version__ =.+/__version__ = \"$version_replace\"/" python2/httplib2/__init__.py python3/httplib2/__init__.py
+		# sed -E --in-place='' -e "s/__version__ =.+/__version__ = \"$version_replace\"/" httplib2/__init__.py
 	echo "Updating file '$path'" >&2
 	if ! sed -E --in-place='' -e "$sed_expr" "$path" ; then
 		echo "sed error $?" >&2
@@ -211,18 +209,13 @@ assert_tree_clean() {
 version_check() {
 	local need=$1
 	local version_setup=$(python setup.py --version)
-	local version_py2=$(python -Es -c "$(egrep '^__version__' python2/httplib2/__init__.py);print(__version__)")
-	local version_py3=$(python -Es -c "$(egrep '^__version__' python3/httplib2/__init__.py);print(__version__)")
+	local version_have=$(python -Es -c "$(egrep '^__version__' httplib2/__init__.py);print(__version__)")
 	if [[ "$version_setup" != "$need" ]] ; then
 		echo "error: setup.py version=$version_setup expected=$need" >&1
 		exit 1
 	fi
-	if [[ "$version_py2" != "$need" ]] ; then
-		echo "error: python2/httplib2/__init__.py:__version__=$version_py2 expected=$need" >&1
-		exit 1
-	fi
-	if [[ "$version_py3" != "$need" ]] ; then
-		echo "error: python3/httplib2/__init__.py:__version__=$version_py3 expected=$need" >&1
+	if [[ "$version_have" != "$need" ]] ; then
+		echo "error: httplib2/__init__.py:__version__=$version_have expected=$need" >&1
 		exit 1
 	fi
 }

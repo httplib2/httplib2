@@ -1,6 +1,8 @@
-import tests
+import urllib
+
 import pytest
-from six.moves import urllib
+
+import tests
 
 
 @pytest.mark.parametrize("path", ("_", "/"), ids=lambda x: "path=" + x)

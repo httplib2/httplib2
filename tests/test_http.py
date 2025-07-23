@@ -1,20 +1,13 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import email.utils
 import errno
-import httplib2
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from http.client import BadStatusLine
 import os
-import sys
 import pytest
-from six.moves import http_client, urllib
 import socket
+from unittest import mock
+import urllib
+
+import httplib2
 import tests
 
 
@@ -37,7 +30,7 @@ def test_bad_status_line_retry():
     http.force_exception_to_status_code = False
     try:
         response, content = http.request(tests.DUMMY_URL, connection_type=tests.MockHTTPBadStatusConnection)
-    except http_client.BadStatusLine:
+    except BadStatusLine:
         assert tests.MockHTTPBadStatusConnection.num_calls == 2
     httplib2.RETRIES = old_retries
 
@@ -57,10 +50,6 @@ def test_unknown_server():
     assert response.status == 400
 
 
-# @pytest.mark.skipif(
-#     not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
-#     reason="Fails on Travis py27/pypy, works elsewhere. See https://travis-ci.org/httplib2/httplib2/jobs/408769880.",
-# )
 @mock.patch("socket.socket.connect", spec=True)
 def test_connection_refused_raises_exception(mock_socket_connect):
     mock_socket_connect.side_effect = _raise_connection_refused_exception
@@ -70,10 +59,6 @@ def test_connection_refused_raises_exception(mock_socket_connect):
         http.request(tests.DUMMY_URL)
 
 
-# @pytest.mark.skipif(
-#     not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
-#     reason="Fails on Travis py27/pypy, works elsewhere. See https://travis-ci.org/httplib2/httplib2/jobs/408769880.",
-# )
 @mock.patch("socket.socket.connect", spec=True)
 def test_connection_refused_returns_response(mock_socket_connect):
     mock_socket_connect.side_effect = _raise_connection_refused_exception
@@ -238,10 +223,6 @@ def test_get_301():
     assert response2.previous.fromcache
 
 
-@pytest.mark.skipif(
-    not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
-    reason="FIXME: timeout on CI py27 and pypy, works elsewhere",
-)
 def test_head_301():
     # Test that we automatically follow 301 redirects
     http = httplib2.Http()
@@ -380,10 +361,6 @@ def test_get_302_no_location():
     assert content == b""
 
 
-@pytest.mark.skipif(
-    not os.environ.get("httplib2_test_still_run_skipped") and sys.version_info.major == 2,
-    reason="FIXME: timeout on CI py27 and pypy, works elsewhere",
-)
 def test_303():
     # Do a follow-up GET on a Location: header
     # returned from a POST that gave a 303.

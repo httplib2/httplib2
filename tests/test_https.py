@@ -1,10 +1,9 @@
-import platform
 import socket
 import ssl
-import sys
+import urllib
+import warnings
 
 import pytest
-from six.moves import urllib
 
 import httplib2
 import tests
@@ -75,15 +74,14 @@ def test_not_trusted_ca():
             pass
 
 
+# Python >= 3.7
 ssl_context_accept_version = (
-    hasattr(tests.ssl_context(), "maximum_version")
-    and hasattr(tests.ssl_context(), "minimum_version")
-    and not (platform.python_implementation().lower() == "pypy" and sys.version_info < (3,))
+    hasattr(ssl.SSLContext(), "maximum_version")
+    and hasattr(ssl.SSLContext(), "minimum_version")
 )
 tls_minmax_versions = (
     (None, "TLSv1_2", ssl.TLSVersion.TLSv1_2)
-    # TODO remove pypy2 workaround `and hasattr` clause
-    if ssl_context_accept_version and hasattr(ssl, "TLSVersion") else (None,)
+    if ssl_context_accept_version else (None,)
 )
 
 
@@ -91,7 +89,7 @@ tls_minmax_versions = (
 @pytest.mark.parametrize("attr", ("maximum_version", "minimum_version"))
 @pytest.mark.parametrize("version", tls_minmax_versions)
 def test_set_tls_version(attr, version):
-    ctx = tests.ssl_context()
+    ctx = ssl.SSLContext()
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
     expect_success = hasattr(ctx, attr)
     kwargs = {"tls_" + attr: version}
@@ -110,6 +108,9 @@ def test_max_tls_version():
     with tests.server_const_http(tls=True) as uri:
         http.request(uri)
         _, tls_ver, _ = http.connections.popitem()[1].sock.cipher()
+        if tls_ver == "TLSv1/SSLv3":
+            warnings.warn(DeprecationWarning("outdated ssl module"))
+            return
         assert "TLSv1.0" <= tls_ver <= "TLSv1.2"
 
 
@@ -159,10 +160,7 @@ def test_client_cert_password_verified():
     assert int(cert_log[0]["serialNumber"], base=16) == expect_serial
 
 
-@pytest.mark.skipif(
-    not hasattr(tests.ssl_context(), "set_servername_callback"),
-    reason="SSLContext.set_servername_callback is not available",
-)
+# Python >= 3.6
 def test_sni_set_servername_callback():
     sni_log = []
 

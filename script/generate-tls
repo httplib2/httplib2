@@ -35,8 +35,8 @@ gen() {
 	[[ -f server.key ]] || openssl genrsa -out server.key $rsa_bits
 
 	echo "- generate CA" >&2
-	openssl req -batch -new -nodes -x509 -days $days -subj "$subj_prefix/CN=$org-CA" -key ca.key -out ca.pem
-	openssl req -batch -new -nodes -x509 -days $days -subj "$subj_prefix/CN=$org-CA-unused" -key ca.key -out ca_unused.pem
+	openssl req -batch -new -nodes -x509 -days $days -subj "$subj_prefix/CN=$org-CA" -key ca.key -out ca.pem -addext "keyUsage=critical,digitalSignature,keyCertSign"
+	openssl req -batch -new -nodes -x509 -days $days -subj "$subj_prefix/CN=$org-CA-unused" -key ca.key -out ca_unused.pem -addext "keyUsage=critical,digitalSignature,keyCertSign"
 
 	echo "- generate client cert" >&2
 	openssl req -batch -new -nodes -out tmp.csr -key client.key -subj "$subj_prefix/CN=$org-client"

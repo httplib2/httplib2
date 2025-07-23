@@ -16,17 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { py: 2.7, ignore-error: false, os: ubuntu-latest }
-          - { py: 3.5, ignore-error: false, os: ubuntu-20.04 }
-          - { py: 3.6, ignore-error: false, os: ubuntu-20.04 }
-          - { py: 3.7, ignore-error: false, os: ubuntu-latest }
-          - { py: 3.8, ignore-error: false, os: ubuntu-latest }
-          - { py: 3.9, ignore-error: false, os: ubuntu-latest }
+          - { py: "3.7", ignore-error: false, os: ubuntu-22.04 }
+          - { py: "3.8", ignore-error: false, os: ubuntu-latest }
+          - { py: "3.9", ignore-error: false, os: ubuntu-latest }
           - { py: "3.10", ignore-error: false, os: ubuntu-latest }
           - { py: "3.11", ignore-error: false, os: ubuntu-latest }
-          - { py: 3.x, ignore-error: true, os: ubuntu-latest }
-          - { py: pypy2.7, ignore-error: false, os: ubuntu-latest }
-          - { py: pypy3.9, ignore-error: false, os: ubuntu-latest }
+          - { py: "3.12", ignore-error: false, os: ubuntu-latest }
+          - { py: "3.13", ignore-error: false, os: ubuntu-latest }
+          - { py: "3.x", ignore-error: false, os: ubuntu-latest }
+          - { py: "pypy3.10", ignore-error: false, os: ubuntu-latest }
 
     steps:
       - uses: actions/checkout@v3
@@ -40,8 +38,6 @@ jobs:
             pyproject.toml
             requirements*.txt
             setup.py
-      - run: pip install tox-gh
-        if: startsWith(matrix.py, '3.') && matrix.py >= '3.6'
       - run: pip install -U pip
         if: startsWith(matrix.py, 'pypy3')
       - run: pip install 'codecov>=2.0.15' -r requirements-test.txt

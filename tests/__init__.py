@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import base64
 import contextlib
 import copy
@@ -7,7 +5,10 @@ import email.utils
 import functools
 import gzip
 import hashlib
+import http.client
+from io import BytesIO
 import os
+import queue
 import random
 import re
 import shutil
@@ -18,19 +19,16 @@ import sys
 import threading
 import time
 import traceback
+import urllib
 import zlib
 
-import httplib2
+from cryptography import x509
 import pytest
-import six
-from six.moves import http_client, queue, urllib
+
+import httplib2
 
 
 _missing = object()
-
-x509 = None
-if sys.version_info >= (3, 6):
-    from cryptography import x509
 
 DUMMY_URL = "http://127.0.0.1:1"
 DUMMY_HTTPS_URL = "https://127.0.0.1:2"
@@ -195,16 +193,16 @@ class HttpResponse(HttpMessage):
     pass
 
 
-class MockResponse(six.BytesIO):
+class MockResponse(BytesIO):
     def __init__(self, body, **kwargs):
-        six.BytesIO.__init__(self, body)
+        BytesIO.__init__(self, body)
         self.headers = kwargs
 
     def items(self):
         return self.headers.items()
 
     def iteritems(self):
-        return six.iteritems(self.headers)
+        return self.headers.items()
 
 
 class MockHTTPConnection(object):
@@ -279,7 +277,7 @@ class MockHTTPBadStatusConnection(object):
 
     def getresponse(self):
         MockHTTPBadStatusConnection.num_calls += 1
-        raise http_client.BadStatusLine("")
+        raise http.client.BadStatusLine("")
 
 
 @contextlib.contextmanager
@@ -357,10 +355,7 @@ def server_socket(fun, request_count=1, timeout=5, scheme="", tls=None):
     if tls is True:
         tls = SERVER_CHAIN
     if tls:
-        # TODO: Drop py3.3 support and replace this with ssl.create_default_context
-        ssl_context = ssl.SSLContext(getattr(ssl, "PROTOCOL_TLS_SERVER", None) or getattr(ssl, "PROTOCOL_TLS", None) or getattr(ssl, "PROTOCOL_SSLv23"))
-        # TODO: leave this when py3.3 support is dropped
-        # ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=CA_CERTS)
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=CA_CERTS)
 
         if callable(tls):
             ssl_context.load_cert_chain(SERVER_CHAIN)
@@ -399,7 +394,7 @@ def server_yield(fun, **kwargs):
             request.client_sock = sock
             request.number = i
             q.put(request)
-            response = six.next(g)
+            response = next(g)
             sock.sendall(response)
             request.client_sock = None
             if not tick(request):
@@ -471,7 +466,7 @@ def http_response_bytes(
     if not undefined_body_length and proto != "HTTP/1.0" and "content-length" not in headers:
         raise Exception("httplib2.tests.http_response_bytes: client could not figure response body length")
     if str(status).isdigit():
-        status = "{} {}".format(status, http_client.responses[status])
+        status = "{} {}".format(status, http.client.responses[status])
     response = (
         "{proto} {status}\r\n{headers}\r\n".format(proto=proto, status=status, headers=header_string).encode() + body
     )
@@ -729,13 +724,13 @@ def gen_digest_nonce(salt=b""):
 
 def gen_password():
     length = random.randint(8, 64)
-    return "".join(six.unichr(random.randint(0, 127)) for _ in range(length))
+    return "".join(chr(random.randint(0, 127)) for _ in range(length))
 
 
 def gzip_compress(bs):
     # gzipobj = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
     # result = gzipobj.compress(text) + gzipobj.flush()
-    buf = six.BytesIO()
+    buf = BytesIO()
     gf = gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6)
     gf.write(bs)
     gf.close()
@@ -764,13 +759,6 @@ def zlib_decompress(bs):
     return zlib.decompress(bs, zlib.MAX_WBITS)
 
 
-def ssl_context(protocol=None):
-    """Workaround for old SSLContext() required protocol argument."""
-    if sys.version_info < (3, 5, 3):
-        return ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-    return ssl.SSLContext()
-
-
 def memoize(fun):
     # functools.cache 3.9+
     f = getattr(functools, "cache", None)
@@ -778,23 +766,11 @@ def memoize(fun):
         return f(fun)
 
     # functools.lru_cache 3.2+
-    f = getattr(functools, "lru_cache", None)
-    if f:
-        return f()(fun)
-
-    # < 3.2
-    return fun
+    return functools.lru_cache()(fun)
 
 
 @memoize
 def x509_serial(path):
-    if x509 is None:
-        # py35 compat hardcoded, change after tls regen
-        if path == CLIENT_PEM:
-            return 0x63586944fc51dfaa087011cb861c96a4bd60aa14
-        elif path == CLIENT_ENCRYPTED_PEM:
-            return 0x63586944fc51dfaa087011cb861c96a4bd60aa15
-        raise Exception("x509_serial requires package cryptography installed")
     with open(path, "rb") as f:
         pem = f.read()
     cert = x509.load_pem_x509_certificate(pem)

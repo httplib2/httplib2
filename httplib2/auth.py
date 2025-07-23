@@ -1,12 +1,17 @@
-import base64
 import re
 
 import pyparsing as pp
 
-from .error import *
+from .error import MalformedHeader
+
+
+try:  # pyparsing>=3.0.0
+    downcaseTokens = pp.common.downcaseTokens
+except AttributeError:
+    downcaseTokens = pp.downcaseTokens
 
 UNQUOTE_PAIRS = re.compile(r"\\(.)")
-unquote = lambda s, l, t: UNQUOTE_PAIRS.sub(r"\1", t[0][1:-1])
+unquote = lambda s, _, t: UNQUOTE_PAIRS.sub(r"\1", t[0][1:-1])
 
 # https://tools.ietf.org/html/rfc7235#section-1.2
 # https://tools.ietf.org/html/rfc7235#appendix-B
@@ -17,7 +22,7 @@ token68 = pp.Combine(pp.Word("-._~+/" + pp.nums + pp.alphas) + pp.Optional(pp.Wo
 )
 
 quoted_string = pp.dblQuotedString.copy().setName("quoted-string").setParseAction(unquote)
-auth_param_name = token.copy().setName("auth-param-name").addParseAction(pp.downcaseTokens)
+auth_param_name = token.copy().setName("auth-param-name").addParseAction(downcaseTokens)
 auth_param = auth_param_name + pp.Suppress("=") + (quoted_string | token)
 params = pp.Dict(pp.delimitedList(pp.Group(auth_param)))
 
@@ -36,7 +41,7 @@ def _parse_authentication_info(headers, headername="authentication-info"):
         return {}
     try:
         parsed = authentication_info.parseString(header)
-    except pp.ParseException as ex:
+    except pp.ParseException:
         # print(ex.explain(ex))
         raise MalformedHeader(headername)
 
@@ -50,7 +55,7 @@ def _parse_www_authenticate(headers, headername="www-authenticate"):
         return {}
     try:
         parsed = www_authenticate.parseString(header)
-    except pp.ParseException as ex:
+    except pp.ParseException:
         # print(ex.explain(ex))
         raise MalformedHeader(headername)
 

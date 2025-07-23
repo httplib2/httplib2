@@ -1,24 +1,15 @@
-import httplib2
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 import pickle
 import pytest
 import socket
 import sys
 import tests
 import time
-from six.moves import urllib
+from unittest import mock
+import urllib
+
+import httplib2
 
 
-@pytest.mark.skipif(
-    sys.version_info <= (3,),
-    reason=(
-        "TODO: httplib2._convert_byte_str was defined only in python3 code " "version"
-    ),
-)
 def test_convert_byte_str():
     with tests.assert_raises(TypeError):
         httplib2._convert_byte_str(4)
@@ -194,10 +185,6 @@ def test_get_end2end_headers():
     assert len(end2end) == 0
 
 
-# @pytest.mark.xfail(
-#     os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-#     reason="FIXME: fail on Travis py27 and pypy, works elsewhere",
-# )
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_ipv6(scheme):
     # Even if IPv6 isn't installed on a machine it should just raise socket.error

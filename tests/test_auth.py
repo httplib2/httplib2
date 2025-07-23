@@ -1,9 +1,10 @@
 import time
+import urllib
+
+import pytest
 
 import httplib2
-import pytest
 import tests
-from six.moves import urllib
 
 
 def test_credentials():

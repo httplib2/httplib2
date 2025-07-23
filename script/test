@@ -25,32 +25,22 @@ main() {
 	fi
 
 	if enabled style ; then
-		pip install black isort
-		tmp=venv/tmp-requirements-flake8.txt
-		grep -E 'flake8' <requirements-test.txt >"$tmp"
-		pip install -r "$tmp"
-		rm "$tmp"
-		# TODO enable after py2/3 merge and initial black/isort run
-        # isort python3/ tests/
-        # black python3/ tests/
-        flake8 python3/ tests/
+		pip install black isort -r requirements-test.txt
+		# TODO enable after initial black/isort run
+        # isort httplib2/ tests/
+        # black httplib2/ tests/
+        flake8 httplib2/ tests/
 	fi
 
 	if enabled test ; then
 		pip install -e . -r requirements-test.txt
-		if [[ -n "${CI:-}" ]] ; then
-			httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_303 "$@" tests/ || true
-			httplib2_test_still_run_skipped=1 pytest --fulltrace -k test_head_301 "$@" tests/ || true
-		fi
 		pytest --fulltrace "${test_flags[@]}"
 	fi
 
 	if enabled check_version ; then
         rm -f dist/*.gz
-		# TODO: sdist bdist_wheel
-		# but wheels don't roll well with our 2/3 split code base
         pip install setuptools
-		python setup.py sdist
+		python setup.py sdist bdist_wheel
 		install_check_version
 	fi
 
@@ -62,8 +52,7 @@ enabled() {
 }
 
 install_check_version() {
-	# FIXME replace gz with whl after py2/3 merge
-	pip install dist/httplib2*gz
+	pip install dist/httplib2*.whl
 	version_source=$(python setup.py --version)
 	version_installed=$(pip show httplib2 |grep -F Version: |cut -d' ' -f2)
 	if [[ "$version_source" != "$version_installed" ]] ; then

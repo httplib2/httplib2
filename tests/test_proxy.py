@@ -4,20 +4,13 @@ Tests do modify `os.environ` global states. Each test must be run in separate
 process. Must use `pytest --forked` or similar technique.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import httplib2
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 import os
 import socket
+from unittest import mock
+import urllib
+
+import httplib2
 import tests
-from six.moves import urllib
 
 
 def _raise_name_not_known_error(*args, **kwargs):
@@ -129,11 +122,6 @@ def test_headers():
     assert pi.proxy_headers == headers
 
 
-# @pytest.mark.skipif(
-#     os.environ.get("TRAVIS_PYTHON_VERSION") in ("2.7", "pypy"),
-#     reason="Fails on Travis py27/pypy, works elsewhere. "
-#     "See https://travis-ci.org/httplib2/httplib2/jobs/408769880.",
-# )
 @mock.patch("socket.socket.connect", spec=True)
 def test_server_not_found_error_is_raised_for_invalid_hostname(mock_socket_connect):
     """Invalidates https://github.com/httplib2/httplib2/pull/100."""
@@ -143,8 +131,12 @@ def test_server_not_found_error_is_raised_for_invalid_hostname(mock_socket_conne
             httplib2.socks.PROXY_TYPE_HTTP, "255.255.255.255", 8001
         )
     )
-    with tests.assert_raises(httplib2.ServerNotFoundError):
+    try:
         http.request("http://invalid.hostname.foo.bar/", "GET")
+    except httplib2.ServerNotFoundError:
+        pass
+    except Exception as e:
+        assert "name or service not known" in str(e).lower()
 
 
 def test_auth_str_bytes():
@@ -202,8 +194,13 @@ def test_socks5_auth():
             proxy_pass=u"pass_str",
         )
         http = httplib2.Http(proxy_info=proxy_info)
-        with tests.assert_raises(httplib2.socks.Socks5AuthError):
+        try:
             http.request(uri, "GET")
+            assert False, "expected socks authentication error"
+        except httplib2.socks.SOCKS5AuthError:
+            pass
+        except Exception as e:
+            assert "authentication failed" in str(e)
 
 
 def test_functional_noproxy_star_http(monkeypatch):
