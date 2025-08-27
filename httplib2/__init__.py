@@ -178,7 +178,8 @@ def _build_ssl_context(
     if hasattr(context, "check_hostname"):
         context.check_hostname = not disable_ssl_certificate_validation
 
-    context.load_verify_locations(ca_certs)
+    if not disable_ssl_certificate_validation:
+        context.load_verify_locations(ca_certs)
 
     if cert_file:
         context.load_cert_chain(cert_file, key_file, key_password)
