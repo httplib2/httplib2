@@ -1,3 +1,10 @@
+0.30.0
+
+  BREAKING CHANGE! Python support 3.7+ only
+
+  https: Do not rely on ssl.PROTOCOL_TLS, which has been deprecated in Python3.10
+  https://github.com/httplib2/httplib2/pull/243
+
 0.22.0
 
   https: disable_ssl_certificate_validation caused ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled
