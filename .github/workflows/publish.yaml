@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-publish
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: cache pip
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-publish
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-publish
