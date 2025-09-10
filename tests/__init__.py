@@ -304,7 +304,7 @@ def server_socket(fun, request_count=1, timeout=5, scheme="", tls=None):
     tls_skip_errors = [
         "TLSV1_ALERT_UNKNOWN_CA",
     ]
-    assert scheme in ("", "http", "https"), 'tests.server_socket: invalid scheme="{}"'.format(scheme)
+    assert scheme in (None, "", "http", "https"), 'tests.server_socket: invalid scheme="{}"'.format(scheme)
 
     def tick(request):
         gcounter[0] += 1
