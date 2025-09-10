@@ -3,7 +3,7 @@ import setuptools
 import setuptools.command.test
 import sys
 
-VERSION = "0.30.0"
+VERSION = "0.30.1"
 
 
 # `python setup.py test` uses existing Python environment, no virtualenv, no pip.
