@@ -1,3 +1,8 @@
+0.31.0
+
+  https: avoid costly load_verify_locations when SSL certificate validation is disabled
+  https://github.com/httplib2/httplib2/pull/249
+
 0.30.2
 
   No changes in library. Fix automatic pypi release from CI.
