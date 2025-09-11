@@ -52,8 +52,8 @@ enabled() {
 }
 
 install_check_version() {
-	pip install dist/httplib2*.whl
 	version_source=$(python setup.py --version)
+	pip install "dist/httplib2-${version_source}-py3-none-any.whl"
 	version_installed=$(pip show httplib2 |grep -F Version: |cut -d' ' -f2)
 	if [[ "$version_source" != "$version_installed" ]] ; then
 		echo "error: installed package version=$version_installed does not match source=$version_source" >&2

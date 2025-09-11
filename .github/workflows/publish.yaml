@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     # https://github.community/t/duplicate-checks-on-push-and-pull-request-simultaneous-event/18012/5
-    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'httplib2/httplib2' }}
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -40,7 +40,7 @@ jobs:
       - name: twine check
         run: twine check dist/*
       - name: script/test install_check_version
-        run: stages=venv,check_version script/test
+        run: stages=check_version script/test
 
       - uses: actions/upload-artifact@v4
         with:
@@ -50,75 +50,47 @@ jobs:
           retention-days: 1
 
   publish-prod:
-    if: ${{ github.repository == 'httplib2/httplib2' && startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'push' && github.repository == 'httplib2/httplib2' && startsWith(github.ref, 'refs/tags/') }}
     needs: [build]
-    environment: pypi-public
+    environment:
+      name: pypi-public
+      url: https://pypi.org/p/httplib2
+    permissions:
+      id-token: write # for trusted publishing
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-publish
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.x
-      - name: install tools
-        run: pip install twine
-
       - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
 
-      - name: twine check
-        run: twine check dist/*
-
-      - name: twine upload (prod)
+      - name: publish to public PyPI
         if: startsWith(github.ref, 'refs/tags/')
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: twine upload --non-interactive --verbose dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
 
   publish-test:
-    if: ${{ github.repository == 'httplib2/httplib2' && github.ref == 'refs/heads/master' }}
+    if: ${{ github.event_name == 'push' && github.repository == 'httplib2/httplib2' && github.ref == 'refs/heads/master' }}
     needs: [build]
-    environment: pypi-test
+    environment:
+      name: pypi-test
+      url: https://test.pypi.org/p/httplib2
+    permissions:
+      id-token: write # for trusted publishing
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-publish
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: setup python
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.x
-      - name: install tools
-        run: pip install twine
-
       - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
 
-      - name: twine upload (test)
-        if: github.ref == 'refs/heads/master'
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-          TWINE_REPOSITORY: "testpypi"
-        run: echo twine upload --non-interactive --skip-existing --verbose dist/*
+      - name: publish to test.PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          repository-url: https://test.pypi.org/legacy/
