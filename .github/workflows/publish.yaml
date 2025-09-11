@@ -2,34 +2,35 @@ name: publish
 on:
   # on pull request, run build step to catch errors earlier, but do not publish
   pull_request:
-  # on push to master without a version tag, publish to test PyPI registry
-  # ... with version tag, publish to production PyPI registry.
+  # on push
+  # ... to any branch, just build and check package
+  # ... to master, publish to test PyPI registry
+  # ... to version tag, publish to production PyPI registry
   push:
-    branches: [master]
+    branches: ["**"]
     tags: ["v[0-9]*"]
+permissions: {}
 jobs:
   build:
     # https://github.community/t/duplicate-checks-on-push-and-pull-request-simultaneous-event/18012/5
     if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.fork }}
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-publish
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-
       - name: setup python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: 3.x
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            requirements*.txt
+            setup.py
       - name: install tools
         run: pip install --upgrade build check-manifest setuptools twine wheel
 
@@ -56,6 +57,7 @@ jobs:
       name: pypi-public
       url: https://pypi.org/p/httplib2
     permissions:
+      attestations: write
       id-token: write # for trusted publishing
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -65,6 +67,10 @@ jobs:
         with:
           name: dist
           path: dist/
+
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: 'dist/*'
 
       - name: publish to public PyPI
         if: startsWith(github.ref, 'refs/tags/')
@@ -79,6 +85,7 @@ jobs:
       name: pypi-test
       url: https://test.pypi.org/p/httplib2
     permissions:
+      attestations: write
       id-token: write # for trusted publishing
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -89,8 +96,13 @@ jobs:
           name: dist
           path: dist/
 
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: 'dist/*'
+
       - name: publish to test.PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true

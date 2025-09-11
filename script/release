@@ -93,13 +93,13 @@ interactive() {
 	fi
 	$venv/bin/python setup.py clean --all
 	$venv/bin/python setup.py sdist bdist_wheel
-	$venv/bin/check-manifest || echo "FIXME check-manifest" >&2
+	$venv/bin/check-manifest
 
 	if confirm "Upload to PyPI? Use in special situation, normally CI/CD will upload to PyPI. [yN] " ; then
 		$venv/bin/twine upload dist/* || exit 1
 	fi
 
-	git push --tags
+	git push --verbose origin master "v$version"
 }
 
 create_commit() {
