@@ -1,3 +1,10 @@
+0.31.2
+
+  build(deps): pp.DelimitedList (camel case) only available in pyparsing>=3.1
+  https://github.com/httplib2/httplib2/issues/255
+
+  DO NOT use 0.31.1
+
 0.31.1
 
   auth: use pyparsing v3 PEP8-compliant method names
