@@ -10,13 +10,13 @@ If you want to help this project by bug report or code change, [contribution gui
 
 HTTPS support is only available if the socket module was
 compiled with SSL support.
-    
+
 ### Keep-Alive
 
 Supports HTTP 1.1 Keep-Alive, keeping the socket open and
 performing multiple requests over the same connection if
 possible.
-    
+
 ### Authentication
 
 The following three types of HTTP Authentication are
@@ -31,26 +31,26 @@ supported. These can be used over both HTTP and HTTPS.
 The module can optionally operate with a private cache that
 understands the Cache-Control: header and uses both the ETag
 and Last-Modified cache validators.
-    
+
 ### All Methods
 
 The module can handle any HTTP request method, not just GET
 and POST.
-    
+
 ### Redirects
 
 Automatically follows 3XX redirects on GETs.
-    
+
 ### Compression
 
 Handles both 'deflate' and 'gzip' types of compression.
-    
+
 ### Lost update support
 
 Automatically adds back ETags into PUT requests to resources
 we have already cached. This implements Section 3.2 of
 Detecting the Lost Update Problem Using Unreserved Checkout.
-    
+
 ### Unit Tested
 
 A large and growing set of unit tests.
@@ -121,3 +121,26 @@ More example usage can be found at:
 
  * https://github.com/httplib2/httplib2/wiki/Examples
  * https://github.com/httplib2/httplib2/wiki/Examples-Python3
+
+
+### Decompression Limits
+
+To mitigate denial-of-service risks from maliciously crafted compressed responses, the library enforces configurable limits during decompression. Limits are checked in fixed order: **hard limit** → **safe limit** → **ratio**.
+
+- **hard limit**
+  Absolute maximum decompressed output size (bytes). Exceeding it raises `DecodeLimitError`. Default: `10 GiB`.
+- **safe limit**
+  Output size below which the ratio check is skipped (avoids false positives on small payloads). Default: `10 MiB`.
+- **ratio**
+  Maximum allowed inflation factor (`output_bytes ÷ consumed_input_bytes`). Once output exceeds `safe_limit`, the ratio is enforced. Default: `100`.
+- **chunk size**
+  Internal processing chunk size in bytes (affects granularity of limit checks). Default: `65536` (64 KiB).
+
+Configuration priority (highest first):
+1. `Http()` constructor arguments: `decode_limit_hard`, `decode_limit_safe`, `decode_limit_ratio`, `decode_limit_chunk`
+2. Environment variables: `httplib2_decode_limit_hard`, `httplib2_decode_limit_safe`, `httplib2_decode_limit_ratio`, `httplib2_decode_limit_chunk` (case-insensitive, uppercase also accepted)
+3. Library defaults (listed above)
+
+Example:
+```python
+h = Http(decode_limit_hard=50_000_000, decode_limit_ratio=50)

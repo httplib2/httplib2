@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Small, fast HTTP client library for Python."""
 
+import functools
+
+from httplib2.decode import ZlibDecoder, DecoderProtocol, LimitDecoder, DeflateDecoder
+
 __author__ = "Joe Gregorio (joe@bitworking.org)"
 __copyright__ = "Copyright 2006, Joe Gregorio"
 __contributors__ = [
@@ -385,26 +389,25 @@ def _entry_disposition(response_headers, request_headers):
     return retval
 
 
-def _decompressContent(response, new_content):
+def _decompressContent(response, new_content, limit_kwargs):
     content = new_content
+    encoding_header = "content-encoding"
+    encoding = response.get(encoding_header, None)
+    limit_wrap = functools.partial(LimitDecoder, **limit_kwargs)
     try:
-        encoding = response.get("content-encoding", None)
-        if encoding in ["gzip", "deflate"]:
-            if encoding == "gzip":
-                content = gzip.GzipFile(fileobj=io.BytesIO(new_content)).read()
-            if encoding == "deflate":
-                try:
-                    content = zlib.decompress(content, zlib.MAX_WBITS)
-                except (IOError, zlib.error):
-                    content = zlib.decompress(content, -zlib.MAX_WBITS)
+        if encoding in ["gzip", "deflate", "zlib"]:
+            try:
+                content = limit_wrap(ZlibDecoder()).consume_bytes(new_content, 0)
+            except (IOError, zlib.error):
+                content = limit_wrap(DeflateDecoder()).consume_bytes(new_content, 0)
             response["content-length"] = str(len(content))
             # Record the historical presence of the encoding in a way the won't interfere.
-            response["-content-encoding"] = response["content-encoding"]
-            del response["content-encoding"]
+            response["-content-encoding"] = response.pop(encoding_header)
     except (IOError, zlib.error):
         content = ""
         raise FailedToDecompressContent(
-            _("Content purported to be compressed with %s but failed to decompress.") % response.get("content-encoding"),
+            _("Content purported to be compressed with %s but failed to decompress.")
+            % encoding,
             response,
             content,
         )
@@ -1235,6 +1238,10 @@ class Http(object):
         disable_ssl_certificate_validation=False,
         tls_maximum_version=None,
         tls_minimum_version=None,
+        decode_limit_hard=None,
+        decode_limit_safe=None,
+        decode_limit_ratio=None,
+        decode_limit_chunk=None,
     ):
         """If 'cache' is a string then it is used as a directory name for
         a disk cache. Otherwise it must be an object that supports the
@@ -1261,6 +1268,11 @@ class Http(object):
 
         tls_maximum_version / tls_minimum_version require Python 3.7+ /
         OpenSSL 1.1.0g+. A value of "TLSv1_3" requires OpenSSL 1.1.1+.
+
+        `decode_limit_{hard,safe,ratio,chunk}` options configure `httplib2.decode.LimitDecoder` in attempt order:
+          - Http() argument - top priority
+          - environment httplib2_decode_limit_{hard,safe,ratio,chunk}
+          - LimitDecoder defaults - least priority
         """
         self.proxy_info = proxy_info
         self.ca_certs = ca_certs
@@ -1308,6 +1320,22 @@ class Http(object):
 
         # Keep Authorization: headers on a redirect.
         self.forward_authorization_headers = False
+
+        limit_kwargs = dict(
+            hard_limit=try_value_or_env(
+                int, decode_limit_hard, "httplib2_decode_limit_hard"
+            ),
+            safe_limit=try_value_or_env(
+                int, decode_limit_safe, "httplib2_decode_limit_safe"
+            ),
+            ratio=try_value_or_env(
+                float, decode_limit_ratio, "httplib2_decode_limit_ratio"
+            ),
+            chunk_size=try_value_or_env(
+                int, decode_limit_chunk, "httplib2_decode_limit_chunk"
+            ),
+        )
+        self.limit_kwargs = {k: v for k, v in limit_kwargs.items() if v is not None}
 
     def close(self):
         """Close persistent connections, clear sensitive data.
@@ -1428,7 +1456,7 @@ class Http(object):
                     content = response.read()
                 response = Response(response)
                 if method != "HEAD":
-                    content = _decompressContent(response, content)
+                    content = _decompressContent(response, content, self.limit_kwargs)
 
             break
         return (response, content)
@@ -1800,3 +1828,16 @@ class Response(dict):
             return self
         else:
             raise AttributeError(name)
+
+
+def try_value_or_env(to, value, env_key, default=None):
+    candidates = (value, os.environ.get(env_key), os.environ.get(env_key.upper()))
+    # same as `to(x1) or to(x2) or to(x3)` except accepting falsey values like 0
+    for x in candidates:
+        if x is None:
+            continue
+        try:
+            return to(x)
+        except ValueError:
+            pass
+    return default

@@ -794,3 +794,11 @@ def rebuild_uri(old, scheme=_missing, netloc=_missing, host=_missing, port=_miss
         path = u.path
     new = (scheme, netloc, path) + u[3:]
     return urllib.parse.urlunsplit(new)
+
+
+# remove when python version is raised to 3.9+
+try:
+    randbytes = random.randbytes
+except AttributeError:
+    def randbytes(n):
+        return random.getrandbits(n * 8).to_bytes(n, "little")
