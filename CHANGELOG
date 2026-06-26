@@ -1,3 +1,11 @@
+0.32.0
+
+  Python support 3.8+ only
+
+  decompression limited by size and ratio
+
+  decoder foundation to support more compression algorithms
+
 0.31.2
 
   build(deps): pp.DelimitedList (camel case) only available in pyparsing>=3.1
