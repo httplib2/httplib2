@@ -1582,6 +1582,10 @@ a string that contains the response entity body.
                 headers["user-agent"] = "Python-httplib2/%s (gzip)" % __version__
 
             uri = iri2uri(uri)
+            # iri2uri() returns bytes unchanged, but the str operations below
+            # (and urlnorm) require a str, so decode a bytes uri here.
+            if isinstance(uri, bytes):
+                uri = uri.decode("utf-8")
             # Prevent CWE-75 space injection to manipulate request via part of uri.
             # Prevent CWE-93 CRLF injection to modify headers via part of uri.
             uri = uri.replace(" ", "%20").replace("\r", "%0D").replace("\n", "%0A")
