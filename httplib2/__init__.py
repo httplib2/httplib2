@@ -965,8 +965,8 @@ def proxy_info_from_url(url, method="http", noproxy=None):
         proxy_type=proxy_type,
         proxy_host=url.hostname,
         proxy_port=url.port or dict(https=443, http=80)[method],
-        proxy_user=url.username or None,
-        proxy_pass=url.password or None,
+        proxy_user=urllib.parse.unquote(url.username) if url.username else None,
+        proxy_pass=urllib.parse.unquote(url.password) if url.password else None,
         proxy_headers=None,
     )
 
