@@ -283,7 +283,7 @@ NORMALIZE_SPACE = re.compile(r"(?:\r\n)?[ \t]+")
 def _normalize_headers(headers):
     return dict(
         [
-            (_convert_byte_str(key).lower(), NORMALIZE_SPACE.sub(_convert_byte_str(value), " ").strip(),)
+            (_convert_byte_str(key).lower(), NORMALIZE_SPACE.sub(" ", _convert_byte_str(value)).strip(),)
             for (key, value) in headers.items()
         ]
     )
