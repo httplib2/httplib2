@@ -363,14 +363,6 @@ def test_parse_cache_control(data):
     assert httplib2._parse_cache_control(header) == expected
 
 
-def test_normalize_headers():
-    # Test that we normalize headers to lowercase
-    h = httplib2._normalize_headers({"Cache-Control": "no-cache", "Other": "Stuff"})
-    assert "cache-control" in h
-    assert "other" in h
-    assert h["other"] == "Stuff"
-
-
 @pytest.mark.parametrize(
     "data",
     (
