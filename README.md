@@ -144,3 +144,41 @@ Configuration priority (highest first):
 Example:
 ```python
 h = Http(decode_limit_hard=50_000_000, decode_limit_ratio=50)
+```
+
+### CA Certificates
+
+HTTPS server certificates are verified against the first CA bundle found, in this order:
+
+1. `Http(ca_certs=...)` constructor argument
+2. `HTTPLIB2_CA_CERTS` environment variable (path to a PEM file)
+3. `ca_certs_locater` package, if installed
+4. `certifi` package, if installed
+5. `cacerts.txt` bundled with httplib2
+
+Items 2-5 are resolved once, when httplib2 is imported. Setting or changing `HTTPLIB2_CA_CERTS` after import has no effect,
+and if it names a file that does not exist, `import httplib2` raises `RuntimeError`.
+
+The bundled file is a snapshot and only changes with httplib2 releases.
+Installing a current `certifi` (`pip install -U certifi`) is the easiest way to receive CA trust updates sooner.
+
+#### eMudhra intermediates (October 2026)
+
+Mozilla distrusted 16 compromised eMudhra intermediate CAs (bug 2083449).
+httplib2 0.32.0 and earlier trust 8 of them through the Comodo "AAA Certificate Services" root in the bundled `cacerts.txt`.
+0.32.1 replaces the bundle with certifi 2026.10.23, which trusts none of them.
+
+Upgrading httplib2 only helps if the bundled file is actually used. If `ca_certs_locater` or `certifi` is installed,
+that bundle is used instead, and certifi releases older than 2026.10.23 may still trust some of these intermediates.
+Check which bundle is in use with `python -c "import httplib2.certs; print(httplib2.certs.where())"`.
+
+To fix this, with or without upgrading httplib2, do any one of:
+
+- if `certifi` is installed (often pulled in by `requests` or `pip`): `pip install -U 'certifi>=2026.10.23'`
+- if `ca_certs_locater` is installed: update the bundle it points to, or set `HTTPLIB2_CA_CERTS`, which takes precedence over it
+- set `HTTPLIB2_CA_CERTS=/path/to/bundle.pem` to a bundle that does not trust these intermediates, before httplib2 is imported
+- pass `Http(ca_certs="/path/to/bundle.pem")`
+
+With httplib2 0.32.1 or later installed, its own bundled file is a clean choice for either of the last two,
+and it overrides an old `certifi` or `ca_certs_locater`. Print its path with
+`python -c "import httplib2.certs; print(httplib2.certs.BUILTIN_CA_CERTS)"` (0.32.0 and earlier ship the affected file).

@@ -1,3 +1,23 @@
+0.32.1
+
+  security: bundled cacerts.txt trusted compromised eMudhra intermediates (Mozilla bug 2083449)
+  via the Comodo "AAA Certificate Services" root. Replaced with certifi 2026.10.23 (Mozilla CA list),
+  which trusts none of them and adds current roots (USERTrust, ISRG, etc).
+
+  Only applies when the bundled file is used. If certifi or ca_certs_locater is installed, its bundle
+  takes precedence and this upgrade changes nothing: run pip install -U 'certifi>=2026.10.23'
+  (older certifi may still trust some of these intermediates), or set HTTPLIB2_CA_CERTS
+  to a clean bundle. See README "CA Certificates".
+
+  compatibility: the new bundle matches what current certifi users already have, but compared to
+  0.32.0 it drops 63 roots. 26 had expired. The other 37 have not expired but were removed or
+  distrusted by Mozilla, including DigiCert Global Root CA, DigiCert Assured ID Root CA,
+  DigiCert High Assurance EV Root CA, GlobalSign Root CA (R1), Go Daddy Class 2, Starfield Class 2,
+  COMODO Certification Authority, Network Solutions, AffirmTrust, Entrust Root Certification
+  Authority, and the VeriSign, GeoTrust, thawte and StartCom roots. Servers whose only chain ends at one of these will now fail
+  verification with the bundled file; pass Http(ca_certs=...) or set HTTPLIB2_CA_CERTS if you
+  must trust them.
+
 0.32.0
 
   Python support 3.8+ only
