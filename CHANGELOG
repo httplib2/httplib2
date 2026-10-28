@@ -1,3 +1,8 @@
+0.32.1
+
+  cacerts: remove distrusted Comodo AAA Certificate Services root CA
+  due to eMudhra incident https://emudhra.we-have-a-problem.com/
+
 0.32.0
 
   Python support 3.8+ only
