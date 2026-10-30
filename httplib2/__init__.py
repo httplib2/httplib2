@@ -41,6 +41,7 @@ import io
 import os
 import random
 import re
+import select
 import socket
 import ssl
 import sys
@@ -82,6 +83,10 @@ debuglevel = 0
 
 # A request will be tried 'RETRIES' times if it fails at the socket/connection level.
 RETRIES = 2
+
+# Methods that may be sent again if the connection drops before a response
+# arrives (RFC 9110 section 9.2.2). To change, assign to Http().idempotent_methods
+IDEMPOTENT_METHODS = frozenset(["GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE"])
 
 
 # Open Items:
@@ -1308,6 +1313,8 @@ class Http(object):
 
         self.safe_methods = list(SAFE_METHODS)
 
+        self.idempotent_methods = IDEMPOTENT_METHODS
+
         # If 'follow_redirects' is True, and this is set to True then
         # all redirecs are followed, including unsafe ones.
         self.follow_all_redirects = False
@@ -1387,6 +1394,26 @@ class Http(object):
         self.credentials.clear()
         self.authorizations = []
 
+    def _connection_is_stale(self, conn):
+        """Return True if the server closed this idle connection.
+
+        Same check as urllib3's is_connection_dropped: an idle socket that
+        polls readable has been closed (or sent unexpected data).
+        """
+        sock = conn.sock
+        if sock is None:
+            return False
+        if hasattr(select, "poll"):
+            # select() fails for fd >= FD_SETSIZE.
+            p = select.poll()
+            p.register(sock, select.POLLIN)
+            return bool(p.poll(0))
+        try:
+            readable, _, _ = select.select([sock], [], [], 0)
+        except (OSError, ValueError):
+            return False
+        return bool(readable)
+
     def _conn_request(self, conn, request_uri, method, body, headers):
         i = 0
         seen_bad_status_line = False
@@ -1394,6 +1421,9 @@ class Http(object):
             i += 1
             try:
                 if conn.sock is None:
+                    conn.connect()
+                elif self._connection_is_stale(conn):
+                    conn.close()
                     conn.connect()
                 conn.request(method, request_uri, body, headers)
             except socket.timeout:
@@ -1428,8 +1458,9 @@ class Http(object):
             except (http.client.BadStatusLine, http.client.ResponseNotReady):
                 # If we get a BadStatusLine on the first try then that means
                 # the connection just went stale, so retry regardless of the
-                # number of RETRIES set.
-                if not seen_bad_status_line and i == 1:
+                # number of RETRIES set. Non-idempotent requests are not
+                # retried: the server may already have processed them.
+                if not seen_bad_status_line and i == 1 and method in self.idempotent_methods:
                     i = 0
                     seen_bad_status_line = True
                     conn.close()

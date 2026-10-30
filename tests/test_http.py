@@ -1,9 +1,11 @@
 import email.utils
 import errno
+import functools
 from http.client import BadStatusLine
 import os
 import pytest
 import socket
+import time
 from unittest import mock
 import urllib
 
@@ -33,6 +35,54 @@ def test_bad_status_line_retry():
     except BadStatusLine:
         assert tests.MockHTTPBadStatusConnection.num_calls == 2
     httplib2.RETRIES = old_retries
+
+
+@pytest.mark.parametrize("method", ["POST", "PATCH"])
+def test_bad_status_line_no_retry_non_idempotent(method):
+    http = httplib2.Http()
+    old_retries = httplib2.RETRIES
+    httplib2.RETRIES = 1
+    http.force_exception_to_status_code = False
+    with pytest.raises(BadStatusLine):
+        http.request(tests.DUMMY_URL, method, body=b"x", connection_type=tests.MockHTTPBadStatusConnection)
+    assert tests.MockHTTPBadStatusConnection.num_calls == 1
+    httplib2.RETRIES = old_retries
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE"])
+def test_bad_status_line_retry_idempotent(method):
+    http = httplib2.Http()
+    old_retries = httplib2.RETRIES
+    httplib2.RETRIES = 1
+    http.force_exception_to_status_code = False
+    with pytest.raises(BadStatusLine):
+        http.request(tests.DUMMY_URL, method, connection_type=tests.MockHTTPBadStatusConnection)
+    assert tests.MockHTTPBadStatusConnection.num_calls == 2
+    httplib2.RETRIES = old_retries
+
+
+def _serve_one_request_then_close(served, sock, tick):
+    # Reply with keep-alive, then server_socket closes the connection.
+    buf = tests.BufferedReader(sock)
+    request = tests.HttpRequest.from_buffered(buf)
+    if request is None:
+        return
+    served.append(request.method)
+    sock.sendall(b"HTTP/1.1 200 OK\r\ncontent-length: 2\r\n\r\nok")
+    tick(request)
+
+
+def test_stale_cached_connection_is_reconnected():
+    served = []
+    handler = functools.partial(_serve_one_request_then_close, served)
+    http = httplib2.Http()
+    with tests.server_socket(handler, request_count=2) as uri:
+        response, _ = http.request(uri, "POST", body=b"one")
+        assert response.status == 200
+        time.sleep(0.3)  # let the server's FIN reach the client
+        response, _ = http.request(uri, "POST", body=b"two")
+        assert response.status == 200
+    assert served == ["POST", "POST"]
 
 
 def test_unknown_server():
