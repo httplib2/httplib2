@@ -32,6 +32,26 @@ Host: {host}\r\n""".format(
     ), content
 
 
+def test_reflect_bytes_uri():
+    # https://github.com/httplib2/httplib2/issues/225
+    # A bytes uri (as passed by some callers, e.g. google-cloud-sdk) used to
+    # crash with "TypeError: a bytes-like object is required, not 'str'"
+    # because iri2uri() returns bytes unchanged and the following str
+    # .replace() calls were applied to bytes.
+    http = httplib2.Http()
+    with tests.server_reflect() as uri:
+        response, content = http.request(uri.encode("utf-8") + b"?query", "METHOD")
+    assert response.status == 200
+    host = urllib.parse.urlparse(uri).netloc
+    assert content.startswith(
+        """\
+METHOD /?query HTTP/1.1\r\n\
+Host: {host}\r\n""".format(
+            host=host
+        ).encode()
+    ), content
+
+
 def test_pickle_http():
     http = httplib2.Http(cache=tests.get_cache_path())
     new_http = pickle.loads(pickle.dumps(http))
