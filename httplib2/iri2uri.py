@@ -63,7 +63,14 @@ def iri2uri(uri):
     the IRI before passing it into the function."""
     if isinstance(uri, str):
         (scheme, authority, path, query, fragment) = urllib.parse.urlsplit(uri)
-        authority = authority.encode("idna").decode("utf-8")
+        # IDNA-encode the host only, not any userinfo. Per RFC 3986 the
+        # authority is [userinfo"@"]host[":"port], and only the host is a
+        # reg-name that can contain non-ASCII characters in an IRI. Encoding
+        # the whole authority punycodes the userinfo into the host, corrupting
+        # both, e.g. "http://user@exämple.com/" used to become
+        # "http://xn--user@exmple-r8a.com/".
+        userinfo, sep, host = authority.rpartition("@")
+        authority = (userinfo + sep if sep else "") + host.encode("idna").decode("utf-8")
         # For each character in 'ucschar' or 'iprivate'
         #  1. encode as utf-8
         #  2. then %-encode each octet of that utf-8
