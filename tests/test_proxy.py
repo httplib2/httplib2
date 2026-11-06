@@ -311,3 +311,22 @@ def test_functional_noproxy_star_https(monkeypatch):
         http = httplib2.Http(ca_certs=tests.CA_CERTS)
         response, _ = http.request(uri, "GET")
         assert response.status == 200
+
+
+def test_zz_forked_module_teardown_workaround():
+    """No-op test, intentionally not marked @pytest.mark.forked.
+
+    Works around a pytest-forked limitation (upstream issue
+    https://github.com/pytest-dev/pytest-forked/issues/67): forked tests
+    run their whole setup/call/teardown inside a child process, so the
+    *parent* pytest process's internal SetupState is never updated for
+    them. When a forked test is the last test executed in a module, the
+    parent's SetupState can be left stale, and the next module's first
+    test then fails in setup with:
+      AssertionError: previous item was not torn down properly
+
+    Keeping a trailing non-forked test here lets the parent process run a
+    normal setup/teardown cycle and correctly close out this module before
+    pytest moves on to the next one.
+    """
+    pass
