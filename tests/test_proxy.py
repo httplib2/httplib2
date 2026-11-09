@@ -4,6 +4,7 @@ Tests do modify `os.environ` global states. Each test must be run in separate
 process. Must use `pytest --forked` or similar technique.
 """
 
+import base64
 import ipaddress
 import os
 import pytest
@@ -47,6 +48,33 @@ def test_from_url(url, kind, host, port, user, password):
     assert pi.proxy_port == port, f"proxy_port expected={port} invalid={pi.proxy_port}"
     assert pi.proxy_user == user, f"proxy_user expected={user} invalid={pi.proxy_user}"
     assert pi.proxy_pass == password, f"proxy_pass expected={password} invalid={pi.proxy_pass}"
+
+
+@pytest.mark.parametrize("scheme", ["http", "socks4", "socks5", "socks"])
+@pytest.mark.parametrize(
+    "userinfo,user,password",
+    [
+        ("user%40example.com:pass%21%3A%2F%40word", "user@example.com", "pass!:/@word"),
+        ("user+name:pass+word", "user+name", "pass+word"),
+        ("user%2521:pass%2525", "user%21", "pass%25"),
+        ("us%C3%A9r:p%C3%A4ss", "usér", "päss"),
+    ],
+)
+def test_from_url_encoded_credentials(scheme, userinfo, user, password):
+    pi = httplib2.proxy_info_from_url(f"{scheme}://{userinfo}@proxy.example.com:8080")
+    assert pi.proxy_user == user
+    assert pi.proxy_pass == password
+
+
+@pytest.mark.forked
+@pytest.mark.parametrize("env_var", ["http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"])
+def test_from_env_encoded_credentials(monkeypatch, env_var):
+    monkeypatch.delenv(env_var.lower(), raising=False)
+    monkeypatch.delenv(env_var.upper(), raising=False)
+    monkeypatch.setenv(env_var, "http://user%40example.com:pass%21word@proxy.example.com:8080")
+    pi = httplib2.proxy_info_from_environment(env_var.lower().split("_")[0])
+    assert pi.proxy_user == "user@example.com"
+    assert pi.proxy_pass == "pass!word"
 
 
 @pytest.mark.forked
@@ -173,6 +201,25 @@ def test_auth_str_bytes():
         )
         response, _ = http.request(uri, "GET")
         assert response.status == 200
+
+
+def test_http_auth_encoded_credentials():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return tests.http_response_bytes()
+
+    with tests.server_request(handler, request_count=2) as uri:
+        proxy_url = uri.replace("http://", "http://user%40example.com:pass%21word@", 1)
+        http = httplib2.Http(proxy_info=httplib2.proxy_info_from_url(proxy_url, noproxy=""))
+        response, _ = http.request(uri, "GET")
+        assert response.status == 200
+
+    assert requests[0].method == "CONNECT"
+    scheme, credentials = requests[0].headers["proxy-authorization"].split()
+    assert scheme.lower() == "basic"
+    assert base64.b64decode(credentials) == b"user@example.com:pass!word"
 
 
 def test_socks5_auth():
