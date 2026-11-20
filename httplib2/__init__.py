@@ -1462,7 +1462,7 @@ class Http(object):
         return (response, content)
 
     def _request(
-        self, conn, host, absolute_uri, request_uri, method, body, headers, redirections, cachekey,
+        self, conn, host, absolute_uri, request_uri, method, body, headers, redirections, cachekey, connection_type=None,
     ):
         """Do the actual request using the connection object
         and also follow one level of redirects if necessary"""
@@ -1526,6 +1526,7 @@ class Http(object):
                             body = None
                         (response, content) = self.request(
                             location, method=redirect_method, body=body, headers=headers, redirections=redirections - 1,
+                            connection_type=connection_type,
                         )
                         response.previous = old_response
                 else:
@@ -1591,12 +1592,11 @@ a string that contains the response entity body.
             conn_key = scheme + ":" + authority
             conn = self.connections.get(conn_key)
             if conn is None:
-                if not connection_type:
-                    connection_type = SCHEME_TO_CONNECTION[scheme]
+                connection_factory = connection_type or SCHEME_TO_CONNECTION[scheme]
                 certs = list(self.certificates.iter(authority))
-                if issubclass(connection_type, HTTPSConnectionWithTimeout):
+                if issubclass(connection_factory, HTTPSConnectionWithTimeout):
                     if certs:
-                        conn = self.connections[conn_key] = connection_type(
+                        conn = self.connections[conn_key] = connection_factory(
                             authority,
                             key_file=certs[0][0],
                             cert_file=certs[0][1],
@@ -1609,7 +1609,7 @@ a string that contains the response entity body.
                             key_password=certs[0][2],
                         )
                     else:
-                        conn = self.connections[conn_key] = connection_type(
+                        conn = self.connections[conn_key] = connection_factory(
                             authority,
                             timeout=self.timeout,
                             proxy_info=self.proxy_info,
@@ -1619,7 +1619,7 @@ a string that contains the response entity body.
                             tls_minimum_version=self.tls_minimum_version,
                         )
                 else:
-                    conn = self.connections[conn_key] = connection_type(
+                    conn = self.connections[conn_key] = connection_factory(
                         authority, timeout=self.timeout, proxy_info=self.proxy_info
                     )
                 conn.set_debuglevel(debuglevel)
@@ -1693,6 +1693,7 @@ a string that contains the response entity body.
                         method=redirect_method,
                         headers=headers,
                         redirections=redirections - 1,
+                        connection_type=connection_type,
                     )
                     response.previous = Response(info)
                     response.previous.fromcache = True
@@ -1722,6 +1723,7 @@ a string that contains the response entity body.
 
                     (response, new_content) = self._request(
                         conn, authority, uri, request_uri, method, body, headers, redirections, cachekey,
+                        connection_type=connection_type,
                     )
 
                 if response.status == 304 and method == "GET":
@@ -1754,6 +1756,7 @@ a string that contains the response entity body.
                 else:
                     (response, content) = self._request(
                         conn, authority, uri, request_uri, method, body, headers, redirections, cachekey,
+                        connection_type=connection_type,
                     )
         except Exception as e:
             is_timeout = isinstance(e, socket.timeout)

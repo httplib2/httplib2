@@ -23,6 +23,46 @@ def test_connection_type():
     assert content == b"the body"
 
 
+@pytest.mark.parametrize("status", [301, 302, 303, 307, 308])
+@pytest.mark.parametrize("existing_connection", [False, True])
+def test_redirect_connection_type(monkeypatch, tmp_path, status, existing_connection):
+    destination = "http://destination.example/"
+
+    class RedirectConnection(tests.MockHTTPConnection):
+        def getresponse(self):
+            if self.host == "redirect.example":
+                return tests.MockResponse(b"", status=str(status), location=destination)
+            return tests.MockResponse(b"custom connection", status="200")
+
+    monkeypatch.setitem(httplib2.SCHEME_TO_CONNECTION, "http", tests.MockHTTPConnection)
+    http = httplib2.Http(cache=str(tmp_path))
+    if existing_connection:
+        http.connections["http:redirect.example"] = RedirectConnection("redirect.example")
+
+    for _ in range(2):
+        response, content = http.request("http://redirect.example/", connection_type=RedirectConnection)
+        assert response.status == 200
+        assert content == b"custom connection"
+        assert isinstance(http.connections["http:destination.example"], RedirectConnection)
+        # Reconnect to the destination when following a cached permanent redirect.
+        http.connections.clear()
+        http.cache.delete(destination)
+
+
+def test_redirect_uses_destination_scheme_by_default(monkeypatch):
+    class RedirectConnection(tests.MockHTTPConnection):
+        def getresponse(self):
+            return tests.MockResponse(b"", status="307", location="https://destination.example/")
+
+    monkeypatch.setitem(httplib2.SCHEME_TO_CONNECTION, "http", RedirectConnection)
+    monkeypatch.setitem(httplib2.SCHEME_TO_CONNECTION, "https", tests.MockHTTPConnection)
+    http = httplib2.Http()
+    response, content = http.request("http://redirect.example/")
+    assert response.status == 200
+    assert content == b"the body"
+    assert type(http.connections["https:destination.example"]) is tests.MockHTTPConnection
+
+
 def test_bad_status_line_retry():
     http = httplib2.Http()
     old_retries = httplib2.RETRIES
