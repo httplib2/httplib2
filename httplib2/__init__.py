@@ -1388,6 +1388,9 @@ class Http(object):
         self.authorizations = []
 
     def _conn_request(self, conn, request_uri, method, body, headers):
+        if RETRIES < 1:
+            raise ValueError("httplib2.RETRIES must be >= 1")
+
         i = 0
         seen_bad_status_line = False
         while i < RETRIES:
