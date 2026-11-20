@@ -23,6 +23,20 @@ def test_connection_type():
     assert content == b"the body"
 
 
+@pytest.mark.parametrize("retries", [0, -1])
+def test_invalid_retries(monkeypatch, retries):
+    monkeypatch.setattr(httplib2, "RETRIES", retries)
+    with pytest.raises(ValueError, match=r"httplib2\.RETRIES must be >= 1"):
+        httplib2.Http().request(tests.DUMMY_URL, connection_type=tests.MockHTTPConnection)
+
+
+def test_one_attempt(monkeypatch):
+    monkeypatch.setattr(httplib2, "RETRIES", 1)
+    response, content = httplib2.Http().request(tests.DUMMY_URL, connection_type=tests.MockHTTPConnection)
+    assert response.status == 200
+    assert content == b"the body"
+
+
 def test_bad_status_line_retry():
     http = httplib2.Http()
     old_retries = httplib2.RETRIES
