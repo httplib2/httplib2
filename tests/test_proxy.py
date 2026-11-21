@@ -88,6 +88,44 @@ def test_proxy_info_repr():
     assert "secret" not in r
 
 
+@pytest.mark.parametrize("connection_class", [httplib2.HTTPConnectionWithTimeout, httplib2.HTTPSConnectionWithTimeout])
+@pytest.mark.parametrize("proxy_callable", [False, True])
+def test_missing_proxy_support(connection_class, proxy_callable, monkeypatch):
+    proxy = httplib2.ProxyInfo(socks.PROXY_TYPE_HTTP, "proxy.example.com", 8080)
+    proxy_info = (lambda scheme: proxy) if proxy_callable else proxy
+    connection = connection_class("example.com", proxy_info=proxy_info)
+    monkeypatch.setattr(httplib2, "socks", None)
+    getaddrinfo = mock.Mock(side_effect=AssertionError("Proxy request must not resolve the destination directly"))
+    socket_factory = mock.Mock(side_effect=AssertionError("Proxy request must not create a direct socket"))
+    monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)
+    monkeypatch.setattr(socket, "socket", socket_factory)
+
+    with pytest.raises(httplib2.ProxiesUnavailableError, match="Proxy support missing"):
+        connection.connect()
+
+    getaddrinfo.assert_not_called()
+    socket_factory.assert_not_called()
+
+
+@pytest.mark.parametrize("connection_class", [httplib2.HTTPConnectionWithTimeout, httplib2.HTTPSConnectionWithTimeout])
+def test_direct_connection_without_proxy_support(connection_class, monkeypatch):
+    connection = connection_class("example.com", proxy_info=None)
+    connection._context = mock.Mock()
+    monkeypatch.setattr(httplib2, "socks", None)
+    getaddrinfo = mock.Mock(return_value=[(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("192.0.2.1", connection.port))])
+    sock = mock.Mock()
+    socket_factory = mock.Mock(return_value=sock)
+    monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)
+    monkeypatch.setattr(socket, "socket", socket_factory)
+
+    connection.connect()
+
+    getaddrinfo.assert_called_once_with("example.com", connection.port, 0, socket.SOCK_STREAM)
+    socket_factory.assert_called_once_with(socket.AF_INET, socket.SOCK_STREAM, 0)
+    sock.connect.assert_called_once_with(("example.com", connection.port))
+    connection.close()
+
+
 @pytest.mark.forked
 def test_applies_to(monkeypatch):
     monkeypatch.setenv("http_proxy", "http://myproxy.example.com:80")
