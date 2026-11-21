@@ -1121,6 +1121,8 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
 
     def connect(self):
         """Connect to a host on a given (SSL) port."""
+        if self.proxy_info and socks is None:
+            raise ProxiesUnavailableError("Proxy support missing but proxy use was requested!")
         if self.proxy_info and self.proxy_info.isgood() and self.proxy_info.applies_to(self.host):
             use_proxy = True
             (
