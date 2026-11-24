@@ -571,11 +571,13 @@ class DigestAuthentication(Authentication):
         qop = self.challenge.get("qop", "auth")
         self.challenge["qop"] = ("auth" in [x.strip() for x in qop.split()]) and "auth" or None
         if self.challenge["qop"] is None:
-            raise UnimplementedDigestAuthOptionError(_("Unsupported value for qop: %s." % qop))
+            raise UnimplementedDigestAuthOptionError(
+                _("Unsupported value for qop: %s." % qop), response, content
+            )
         self.challenge["algorithm"] = self.challenge.get("algorithm", "MD5").upper()
         if self.challenge["algorithm"] != "MD5":
             raise UnimplementedDigestAuthOptionError(
-                _("Unsupported value for algorithm: %s." % self.challenge["algorithm"])
+                _("Unsupported value for algorithm: %s." % self.challenge["algorithm"]), response, content
             )
         self.A1 = "".join([self.credentials[0], ":", self.challenge["realm"], ":", self.credentials[1],])
         self.challenge["nc"] = 1
@@ -648,17 +650,17 @@ class HmacDigestAuthentication(Authentication):
         self.challenge["salt"] = self.challenge.get("salt", "")
         if not self.challenge.get("snonce"):
             raise UnimplementedHmacDigestAuthOptionError(
-                _("The challenge doesn't contain a server nonce, or this one is empty.")
+                _("The challenge doesn't contain a server nonce, or this one is empty."), response, content
             )
         self.challenge["algorithm"] = self.challenge.get("algorithm", "HMAC-SHA-1")
         if self.challenge["algorithm"] not in ["HMAC-SHA-1", "HMAC-MD5"]:
             raise UnimplementedHmacDigestAuthOptionError(
-                _("Unsupported value for algorithm: %s." % self.challenge["algorithm"])
+                _("Unsupported value for algorithm: %s." % self.challenge["algorithm"]), response, content
             )
         self.challenge["pw-algorithm"] = self.challenge.get("pw-algorithm", "SHA-1")
         if self.challenge["pw-algorithm"] not in ["SHA-1", "MD5"]:
             raise UnimplementedHmacDigestAuthOptionError(
-                _("Unsupported value for pw-algorithm: %s." % self.challenge["pw-algorithm"])
+                _("Unsupported value for pw-algorithm: %s." % self.challenge["pw-algorithm"]), response, content
             )
         if self.challenge["algorithm"] == "HMAC-MD5":
             self.hashmod = _md5
