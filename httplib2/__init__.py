@@ -392,7 +392,7 @@ def _entry_disposition(response_headers, request_headers):
 def _decompressContent(response, new_content, limit_kwargs):
     content = new_content
     encoding_header = "content-encoding"
-    encoding = response.get(encoding_header, None)
+    encoding = (response.get(encoding_header) or "").strip().lower()
     limit_wrap = functools.partial(LimitDecoder, **limit_kwargs)
     try:
         if encoding in ["gzip", "deflate", "zlib"]:
