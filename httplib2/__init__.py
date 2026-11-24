@@ -597,23 +597,24 @@ class DigestAuthentication(Authentication):
                 H(A2),
             ),
         )
+        quote = lambda value: value.replace("\\", "\\\\").replace('"', '\\"')
         headers["authorization"] = (
             'Digest username="%s", realm="%s", nonce="%s", '
             'uri="%s", algorithm=%s, response=%s, qop=%s, '
             'nc=%08x, cnonce="%s"'
         ) % (
-            self.credentials[0],
-            self.challenge["realm"],
-            self.challenge["nonce"],
-            request_uri,
+            quote(self.credentials[0]),
+            quote(self.challenge["realm"]),
+            quote(self.challenge["nonce"]),
+            quote(request_uri),
             self.challenge["algorithm"],
             request_digest,
             self.challenge["qop"],
             self.challenge["nc"],
-            self.challenge["cnonce"],
+            quote(self.challenge["cnonce"]),
         )
         if self.challenge.get("opaque"):
-            headers["authorization"] += ', opaque="%s"' % self.challenge["opaque"]
+            headers["authorization"] += ', opaque="%s"' % quote(self.challenge["opaque"])
         self.challenge["nc"] += 1
 
     def response(self, response, content):
