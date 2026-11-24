@@ -375,7 +375,7 @@ def _entry_disposition(response_headers, request_headers):
             freshness_lifetime = 0
         if "max-age" in cc:
             try:
-                freshness_lifetime = int(cc["max-age"])
+                freshness_lifetime = min(freshness_lifetime, int(cc["max-age"]))
             except ValueError:
                 freshness_lifetime = 0
         if "min-fresh" in cc:
