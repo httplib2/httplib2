@@ -22,7 +22,9 @@ auth_param = auth_param_name + pp.Suppress("=") + (quoted_string | token)
 params = pp.Dict(pp.DelimitedList(pp.Group(auth_param)))
 
 scheme = token("scheme")
-challenge = scheme + (params("params") | token68("token"))
+challenge = scheme + (
+    params("params") | token68("token") | pp.FollowedBy(pp.Literal(",") | pp.StringEnd())
+)
 
 authentication_info = params.copy()
 www_authenticate = pp.DelimitedList(pp.Group(challenge))
