@@ -1669,7 +1669,7 @@ a string that contains the response entity body.
                 for header in vary_headers:
                     key = "-varied-%s" % header
                     value = info[key]
-                    if headers.get(header, None) != value:
+                    if header.strip() == "*" or headers.get(header, None) != value:
                         cached_value = None
                         break
 
