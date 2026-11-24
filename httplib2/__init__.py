@@ -672,12 +672,12 @@ class HmacDigestAuthentication(Authentication):
             [
                 self.credentials[0],
                 ":",
-                self.pwhashmod.new("".join([self.credentials[1], self.challenge["salt"]])).hexdigest().lower(),
+                self.pwhashmod("".join([self.credentials[1], self.challenge["salt"]]).encode("utf-8")).hexdigest().lower(),
                 ":",
                 self.challenge["realm"],
             ]
         )
-        self.key = self.pwhashmod.new(self.key).hexdigest().lower()
+        self.key = self.pwhashmod(self.key.encode("utf-8")).hexdigest().lower()
 
     def request(self, method, request_uri, headers, content):
         """Modify the request headers"""
@@ -687,7 +687,9 @@ class HmacDigestAuthentication(Authentication):
         created = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         cnonce = _cnonce()
         request_digest = "%s:%s:%s:%s:%s" % (method, request_uri, cnonce, self.challenge["snonce"], headers_val,)
-        request_digest = hmac.new(self.key, request_digest, self.hashmod).hexdigest().lower()
+        request_digest = hmac.new(
+            self.key.encode("ascii"), request_digest.encode("utf-8"), self.hashmod
+        ).hexdigest().lower()
         headers["authorization"] = (
             'HMACDigest username="%s", realm="%s", snonce="%s",'
             ' cnonce="%s", uri="%s", created="%s", '
