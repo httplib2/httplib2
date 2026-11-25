@@ -279,6 +279,7 @@ def safename(filename):
 
 CRLF_RE = re.compile(r"[\r\n]")
 FIELD_NAME_RE = re.compile(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$")
+OBS_FOLD_RE = re.compile(r"[ \t]*\r\n[ \t]+")
 OWS_EDGE_RE = re.compile(r"^[ \t]+|[ \t]+$")
 
 def _normalize_headers(headers):
@@ -286,11 +287,15 @@ def _normalize_headers(headers):
     for raw_key, raw_value in headers.items():
         key = _convert_byte_str(raw_key)
         value = _convert_byte_str(raw_value)
+
         if not FIELD_NAME_RE.match(key):
             raise ValueError(f"Invalid HTTP header field name: {key!r}")
-        if CRLF_RE.search(key) or CRLF_RE.search(value):
+        if CRLF_RE.search(key):
             raise ValueError("CR or LF characters are not allowed in HTTP headers")
-        normalized[key.lower()] = OWS_EDGE_RE.sub("", value)
+        unfolded = OBS_FOLD_RE.sub(" ", value)
+        if CRLF_RE.search(unfolded):
+            raise ValueError("Invalid CR or LF sequence in HTTP header value")
+        normalized[key.lower()] = OWS_EDGE_RE.sub("", unfolded)
 
     return normalized
 

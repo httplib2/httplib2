@@ -688,34 +688,42 @@ def test_inject_space():
 
 HEADERS_VALID_CASES = [
     (
-            {"X-pAddING": "  pad   end\t"},
-            {"x-padding": "pad   end"},
+        {"X-pAddING": "  pad   end\t"},
+        {"x-padding": "pad   end"},
     ),
     (
-            {"Content-Disposition": r'attachment; filename="a\d  b.txt"'},
-            {"content-disposition": r'attachment; filename="a\d  b.txt"'},
+        {"Content-Disposition": r'attachment; filename="a\d  b.txt"'},
+        {"content-disposition": r'attachment; filename="a\d  b.txt"'},
     ),
     (
-            {"X-Trailing-Backslash": r"value\\   "},
-            {"x-trailing-backslash": r"value\\"},
+        {"X-Trailing-Backslash": r"value\\   "},
+        {"x-trailing-backslash": r"value\\"},
     ),
     (
-            {b"Content-Type": b"  text/plain;  charset=utf-8\t"},
-            {"content-type": "text/plain;  charset=utf-8"},
+        {b"Content-Type": b"  text/plain;  charset=utf-8\t"},
+        {"content-type": "text/plain;  charset=utf-8"},
+    ),
+    (
+        {"X-Folded": "line1\r\n folded"},
+        {"x-folded": "line1 folded"},
+    ),
+    (
+        {"X-Folded-Tab": "line1  \r\n\t\tfolded   here"},
+        {"x-folded-tab": "line1 folded   here"},
+    ),
+    (
+        {"X-Multi-Fold": "part1\r\n part2\r\n\tpart3"},
+        {"x-multi-fold": "part1 part2 part3"},
     ),
 ]
 HEADERS_INVALID_CASES = [
-    # obs-fold and bare CR / LF in header values
-    {"X-Folded": "line1\r\n folded"},
-    {"X-Folded-Tab": "line1\r\n\tfolded"},
     {"X-Bare-LF": "line1\nline2"},
     {"X-Bare-CR": "line1\rline2"},
+    {"X-CRLF-No-Indent": "line1\r\nline2"},
     {"X-CRLF-Injection": "ok\r\nSet-Cookie: evil=1"},
-    # CR / LF in header names
     {"X-Name\r\n": "val"},
     {"X-Name\n": "val"},
     {"X-Name\r": "val"},
-    # Whitespace or delimiters in or around header names
     {"": "empty-name"},
     {"X-Space ": "val"},
     {" X-Leading-Space": "val"},
