@@ -732,6 +732,7 @@ HEADERS_INVALID_CASES = [
     {"X-Colon:": "val"},
 ]
 
+
 @pytest.mark.parametrize("headers, expected", HEADERS_VALID_CASES)
 def test_normalize_headers_valid(headers, expected):
     assert httplib2._normalize_headers(headers) == expected
