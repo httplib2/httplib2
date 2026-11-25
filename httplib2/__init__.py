@@ -277,16 +277,22 @@ def safename(filename):
     return ",".join((filename, filemd5))
 
 
-NORMALIZE_SPACE = re.compile(r"(?:\r\n)?[ \t]+")
-
+CRLF_RE = re.compile(r"[\r\n]")
+FIELD_NAME_RE = re.compile(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$")
+OWS_EDGE_RE = re.compile(r"^[ \t]+|[ \t]+$")
 
 def _normalize_headers(headers):
-    return dict(
-        [
-            (_convert_byte_str(key).lower(), NORMALIZE_SPACE.sub(" ", _convert_byte_str(value)).strip(),)
-            for (key, value) in headers.items()
-        ]
-    )
+    normalized = {}
+    for raw_key, raw_value in headers.items():
+        key = _convert_byte_str(raw_key)
+        value = _convert_byte_str(raw_value)
+        if not FIELD_NAME_RE.match(key):
+            raise ValueError(f"Invalid HTTP header field name: {key!r}")
+        if CRLF_RE.search(key) or CRLF_RE.search(value):
+            raise ValueError("CR or LF characters are not allowed in HTTP headers")
+        normalized[key.lower()] = OWS_EDGE_RE.sub("", value)
+
+    return normalized
 
 
 def _convert_byte_str(s):

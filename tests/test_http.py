@@ -686,24 +686,50 @@ def test_inject_space():
         assert req.uri in expect
 
 
-def test_normalize_headers():
-    # Test that we normalize headers to lowercase
-    h = httplib2._normalize_headers({"Cache-Control": "no-cache", "Other": "Stuff"})
-    assert "cache-control" in h
-    assert "other" in h
-    assert h["other"] == "Stuff"
+HEADERS_VALID_CASES = [
+    (
+            {"X-pAddING": "  pad   end\t"},
+            {"x-padding": "pad   end"},
+    ),
+    (
+            {"Content-Disposition": r'attachment; filename="a\d  b.txt"'},
+            {"content-disposition": r'attachment; filename="a\d  b.txt"'},
+    ),
+    (
+            {"X-Trailing-Backslash": r"value\\   "},
+            {"x-trailing-backslash": r"value\\"},
+    ),
+    (
+            {b"Content-Type": b"  text/plain;  charset=utf-8\t"},
+            {"content-type": "text/plain;  charset=utf-8"},
+    ),
+]
+HEADERS_INVALID_CASES = [
+    # obs-fold and bare CR / LF in header values
+    {"X-Folded": "line1\r\n folded"},
+    {"X-Folded-Tab": "line1\r\n\tfolded"},
+    {"X-Bare-LF": "line1\nline2"},
+    {"X-Bare-CR": "line1\rline2"},
+    {"X-CRLF-Injection": "ok\r\nSet-Cookie: evil=1"},
+    # CR / LF in header names
+    {"X-Name\r\n": "val"},
+    {"X-Name\n": "val"},
+    {"X-Name\r": "val"},
+    # Whitespace or delimiters in or around header names
+    {"": "empty-name"},
+    {"X-Space ": "val"},
+    {" X-Leading-Space": "val"},
+    {"X-Internal Space": "val"},
+    {"X-Tab\t": "val"},
+    {"X-Colon:": "val"},
+]
+
+@pytest.mark.parametrize("headers, expected", HEADERS_VALID_CASES)
+def test_normalize_headers_valid(headers, expected):
+    assert httplib2._normalize_headers(headers) == expected
 
 
-@pytest.mark.parametrize(
-    "value, expected",
-    [
-        ("a   b", "a b"),
-        ("a\r\n  b", "a b"),
-        ("  padded\t", "padded"),
-        # backslashes are data, not regex replacement escapes
-        (r"attachment; filename=\"a\d  b.txt\"", r"attachment; filename=\"a\d  b.txt\""),
-        (r"x\1y", r"x\1y"),
-    ],
-)
-def test_normalize_headers_value(value, expected):
-    assert httplib2._normalize_headers({"X-Test": value}) == {"x-test": expected}
+@pytest.mark.parametrize("headers", HEADERS_INVALID_CASES)
+def test_normalize_headers_invalid(headers):
+    with pytest.raises(ValueError):
+        httplib2._normalize_headers(headers)
