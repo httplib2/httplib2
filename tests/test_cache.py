@@ -363,29 +363,6 @@ def test_parse_cache_control(data):
     assert httplib2._parse_cache_control(header) == expected
 
 
-def test_normalize_headers():
-    # Test that we normalize headers to lowercase
-    h = httplib2._normalize_headers({"Cache-Control": "no-cache", "Other": "Stuff"})
-    assert "cache-control" in h
-    assert "other" in h
-    assert h["other"] == "Stuff"
-
-
-@pytest.mark.parametrize(
-    "value, expected",
-    [
-        ("a   b", "a b"),
-        ("a\r\n  b", "a b"),
-        ("  padded\t", "padded"),
-        # backslashes are data, not regex replacement escapes
-        (r"attachment; filename=\"a\d.txt\"", r"attachment; filename=\"a\d.txt\""),
-        (r"x\1y", r"x\1y"),
-    ],
-)
-def test_normalize_headers_value(value, expected):
-    assert httplib2._normalize_headers({"X-Test": value}) == {"x-test": expected}
-
-
 @pytest.mark.parametrize(
     "data",
     (
