@@ -1,6 +1,6 @@
 import email.utils
 import errno
-from http.client import BadStatusLine
+from http.client import BadStatusLine, HTTPException
 import os
 import pytest
 import socket
@@ -47,6 +47,151 @@ def test_bad_status_line_retry():
     except BadStatusLine:
         assert tests.MockHTTPBadStatusConnection.num_calls == 2
     httplib2.RETRIES = old_retries
+
+
+@pytest.mark.parametrize("sock_is_none", [True, False])
+@pytest.mark.parametrize("retries", [2, 3])
+def test_request_http_exception_retry_succeeds(monkeypatch, sock_is_none, retries):
+    monkeypatch.setattr(httplib2, "RETRIES", retries)
+    state = {"request_calls": 0, "close_calls": 0, "connect_calls": 0}
+
+    class FlakyRequestConnection(tests.MockHTTPConnection):
+        def connect(self):
+            state["connect_calls"] += 1
+            self.sock = None if sock_is_none else object()
+
+        def close(self):
+            state["close_calls"] += 1
+            self.sock = None
+
+        def request(self, method, request_uri, body, headers):
+            state["request_calls"] += 1
+            if state["request_calls"] < retries:
+                if sock_is_none:
+                    self.sock = None
+                raise HTTPException("transient request error")
+
+    response, content = httplib2.Http().request(tests.DUMMY_URL, connection_type=FlakyRequestConnection)
+    assert response.status == 200
+    assert content == b"the body"
+    assert state["request_calls"] == retries
+    assert state["close_calls"] == retries - 1
+
+
+@pytest.mark.parametrize("retries", [1, 2])
+def test_request_http_exception_exhausts_retries_when_sock_none(monkeypatch, retries):
+    monkeypatch.setattr(httplib2, "RETRIES", retries)
+    state = {"request_calls": 0, "close_calls": 0}
+
+    class FailingRequestConnection(tests.MockHTTPConnection):
+        def close(self):
+            state["close_calls"] += 1
+            self.sock = None
+
+        def request(self, method, request_uri, body, headers):
+            state["request_calls"] += 1
+            self.sock = None
+            raise HTTPException("persistent request error")
+
+    http = httplib2.Http()
+    http.force_exception_to_status_code = False
+    with pytest.raises(HTTPException, match="persistent request error"):
+        http.request(tests.DUMMY_URL, connection_type=FailingRequestConnection)
+    assert state["request_calls"] == retries
+    assert state["close_calls"] == retries
+
+
+def test_request_http_exception_final_attempt_reads_response_when_sock_open(monkeypatch):
+    monkeypatch.setattr(httplib2, "RETRIES", 2)
+    state = {"request_calls": 0, "getresponse_calls": 0}
+
+    class RequestFailsButRespondsConnection(tests.MockHTTPConnection):
+        def connect(self):
+            self.sock = object()
+
+        def close(self):
+            self.sock = None
+
+        def request(self, method, request_uri, body, headers):
+            state["request_calls"] += 1
+            raise HTTPException("connection closed after write")
+
+        def getresponse(self):
+            state["getresponse_calls"] += 1
+            return super().getresponse()
+
+    response, content = httplib2.Http().request(tests.DUMMY_URL, connection_type=RequestFailsButRespondsConnection)
+    assert response.status == 200
+    assert content == b"the body"
+    assert state["request_calls"] == 2
+    assert state["getresponse_calls"] == 1
+
+
+@pytest.mark.parametrize(
+    "exc_factory",
+    [
+        lambda: socket.error(errno.ECONNRESET, "Connection reset"),
+        lambda: HTTPException("transient response error"),
+    ],
+)
+@pytest.mark.parametrize("retries", [2, 3])
+def test_getresponse_error_retry_succeeds(monkeypatch, exc_factory, retries):
+    monkeypatch.setattr(httplib2, "RETRIES", retries)
+    state = {"getresponse_calls": 0, "close_calls": 0, "connect_calls": 0}
+
+    class FlakyResponseConnection(tests.MockHTTPConnection):
+        def connect(self):
+            state["connect_calls"] += 1
+            self.sock = object()
+
+        def close(self):
+            state["close_calls"] += 1
+            self.sock = None
+
+        def getresponse(self):
+            state["getresponse_calls"] += 1
+            if state["getresponse_calls"] < retries:
+                raise exc_factory()
+            return super().getresponse()
+
+    response, content = httplib2.Http().request(tests.DUMMY_URL, connection_type=FlakyResponseConnection)
+    assert response.status == 200
+    assert content == b"the body"
+    assert state["getresponse_calls"] == retries
+    assert state["close_calls"] == retries - 1
+    assert state["connect_calls"] == retries
+
+
+@pytest.mark.parametrize(
+    "exc_type, exc_factory",
+    [
+        (socket.error, lambda: socket.error(errno.ECONNRESET, "Connection reset")),
+        (HTTPException, lambda: HTTPException("persistent response error")),
+    ],
+)
+@pytest.mark.parametrize("retries", [1, 2])
+def test_getresponse_error_exhausts_retries(monkeypatch, exc_type, exc_factory, retries):
+    monkeypatch.setattr(httplib2, "RETRIES", retries)
+    state = {"getresponse_calls": 0, "close_calls": 0}
+
+    class FailingResponseConnection(tests.MockHTTPConnection):
+        def connect(self):
+            self.sock = object()
+
+        def close(self):
+            state["close_calls"] += 1
+            self.sock = None
+
+        def getresponse(self):
+            state["getresponse_calls"] += 1
+            raise exc_factory()
+
+    http = httplib2.Http()
+    http.force_exception_to_status_code = False
+    with pytest.raises(exc_type):
+        http.request(tests.DUMMY_URL, connection_type=FailingResponseConnection)
+    assert state["getresponse_calls"] == retries
+    assert state["close_calls"] == retries
 
 
 def test_unknown_server():
