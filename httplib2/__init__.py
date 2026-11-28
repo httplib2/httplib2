@@ -309,12 +309,31 @@ def _convert_byte_str(s):
 def _parse_cache_control(headers):
     retval = {}
     if "cache-control" in headers:
-        parts = headers["cache-control"].split(",")
-        parts_with_args = [
-            tuple([x.strip().lower() for x in part.split("=", 1)]) for part in parts if -1 != part.find("=")
-        ]
-        parts_wo_args = [(name.strip().lower(), 1) for name in parts if -1 == name.find("=")]
-        retval = dict(parts_with_args + parts_wo_args)
+        header_value = headers["cache-control"]
+        parts = []
+        start = 0
+        quoted = escaped = False
+        for index, character in enumerate(header_value):
+            if escaped:
+                escaped = False
+            elif quoted and character == "\\":
+                escaped = True
+            elif character == '"':
+                quoted = not quoted
+            elif character == "," and not quoted:
+                parts.append(header_value[start:index])
+                start = index + 1
+        parts.append(header_value[start:])
+        for part in parts:
+            name, separator, value = part.partition("=")
+            name = name.strip().lower()
+            if separator:
+                value = value.strip()
+                if len(value) >= 2 and value[0] == value[-1] == '"':
+                    value = re.sub(r"\\(.)", r"\1", value[1:-1])
+                retval[name] = value.lower()
+            else:
+                retval[name] = 1
     return retval
 
 
