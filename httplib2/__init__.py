@@ -580,7 +580,7 @@ class DigestAuthentication(Authentication):
         Authentication.__init__(self, credentials, host, request_uri, headers, response, content, http)
         self.challenge = auth._parse_www_authenticate(response, "www-authenticate")["digest"]
         qop = self.challenge.get("qop", "auth")
-        self.challenge["qop"] = ("auth" in [x.strip() for x in qop.split()]) and "auth" or None
+        self.challenge["qop"] = ("auth" in [x.strip() for x in qop.split(",")]) and "auth" or None
         if self.challenge["qop"] is None:
             raise UnimplementedDigestAuthOptionError(_("Unsupported value for qop: %s." % qop))
         self.challenge["algorithm"] = self.challenge.get("algorithm", "MD5").upper()
