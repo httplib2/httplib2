@@ -128,6 +128,30 @@ def test_headers():
     assert pi.proxy_headers == headers
 
 
+@pytest.mark.parametrize("noproxy", [" example.com , localhost ", "example.com,\tlocalhost, ,"])
+def test_noproxy_whitespace(noproxy):
+    pi = httplib2.proxy_info_from_url("http://proxy.example", noproxy=noproxy)
+    assert pi.bypass_hosts == ("example.com", "localhost")
+    assert not pi.applies_to("example.com")
+    assert not pi.applies_to("localhost")
+    assert pi.applies_to("sub.example.com")
+    assert pi.applies_to("other.example")
+
+
+@pytest.mark.parametrize("noproxy", [" * ", "example.com,*,localhost", "example.com, * ,localhost"])
+def test_noproxy_wildcard_in_list(noproxy):
+    pi = httplib2.proxy_info_from_url("http://proxy.example", noproxy=noproxy)
+    assert pi.bypass_hosts is httplib2.AllHosts
+    assert not pi.applies_to("other.example")
+
+
+@pytest.mark.parametrize("noproxy", ["", " ", ", ,\t,"])
+def test_noproxy_empty_entries(noproxy):
+    pi = httplib2.proxy_info_from_url("http://proxy.example", noproxy=noproxy)
+    assert not pi.bypass_hosts
+    assert pi.applies_to("example.com")
+
+
 @mock.patch("socket.socket.connect", spec=True)
 def test_server_not_found_error_is_raised_for_invalid_hostname(mock_socket_connect):
     """Invalidates https://github.com/httplib2/httplib2/pull/100."""

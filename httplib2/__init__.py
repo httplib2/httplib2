@@ -985,12 +985,10 @@ def proxy_info_from_url(url, method="http", noproxy=None):
     # If not given an explicit noproxy value, respect values in env vars.
     if noproxy is None:
         noproxy = os.environ.get("no_proxy", os.environ.get("NO_PROXY", ""))
-    # Special case: A single '*' character means all hosts should be bypassed.
-    if noproxy == "*":
+    bypass_hosts = tuple(host.strip() for host in noproxy.split(",") if host.strip())
+    # A '*' entry means all hosts should be bypassed, even in a list.
+    if "*" in bypass_hosts:
         bypass_hosts = AllHosts
-    elif noproxy.strip():
-        bypass_hosts = noproxy.split(",")
-        bypass_hosts = tuple(filter(bool, bypass_hosts))  # To exclude empty string.
 
     pi.bypass_hosts = bypass_hosts
     return pi
