@@ -63,7 +63,11 @@ def iri2uri(uri):
     the IRI before passing it into the function."""
     if isinstance(uri, str):
         (scheme, authority, path, query, fragment) = urllib.parse.urlsplit(uri)
-        authority = authority.encode("idna").decode("utf-8")
+        userinfo, separator, host_port = authority.rpartition("@")
+        if not host_port.startswith("["):
+            hostname, colon, port = host_port.partition(":")
+            host_port = hostname.encode("idna").decode("ascii") + colon + port
+        authority = userinfo + separator + host_port
         # For each character in 'ucschar' or 'iprivate'
         #  1. encode as utf-8
         #  2. then %-encode each octet of that utf-8
