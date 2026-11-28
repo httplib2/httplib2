@@ -368,7 +368,10 @@ def _entry_disposition(response_headers, request_headers):
     elif "only-if-cached" in cc:
         retval = "FRESH"
     elif "date" in response_headers:
-        date = calendar.timegm(email.utils.parsedate_tz(response_headers["date"]))
+        try:
+            date = calendar.timegm(email.utils.parsedate_tz(response_headers["date"]))
+        except (TypeError, ValueError, OverflowError):
+            return "STALE"
         now = time.time()
         current_age = max(0, now - date)
         if "max-age" in cc_response:
