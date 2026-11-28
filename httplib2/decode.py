@@ -24,7 +24,7 @@ class DecoderProtocol(Protocol):
     def consume_bytes(self, data: bytes, chunk_size: int = 64 << 10) -> bytes:
         out = bytearray()
         if chunk_size == 0:
-            chunk_size = len(data)
+            chunk_size = len(data) or 1
         for i in range(0, len(data), chunk_size):
             chunk = data[i : i + chunk_size]
             out.extend(self.decode(chunk))
@@ -164,8 +164,9 @@ class LimitDecoder(DecoderProtocol):
                     continue
 
             if self._input_buffer:
-                chunk = bytes(self._input_buffer[: self._chunk_size])
-                del self._input_buffer[: self._chunk_size]
+                chunk_size = self._chunk_size or len(self._input_buffer)
+                chunk = bytes(self._input_buffer[:chunk_size])
+                del self._input_buffer[:chunk_size]
 
                 data = self._decoder.decode(chunk)
                 self._consumed_length += len(chunk)
